@@ -1,6 +1,3 @@
-const EMPTY_THREADS: ChatThread[] = [];
-const EMPTY_IMAGES: GeneratedImage[] = [];
-const DEFAULT_CREDITS = START_CREDITS;
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ChatMode } from "./models";
 
