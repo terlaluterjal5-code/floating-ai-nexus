@@ -51,9 +51,7 @@ const cache = new Map<string, unknown>();
 function bumpKey(key: string) {
   cache.delete(key);
 }
-function emit(key?: string) {
-  if (key) bumpKey(key);
-  else cache.clear();
+function emit() {
   listeners.forEach((l) => l());
 }
 function subscribe(cb: () => void) {
@@ -85,7 +83,7 @@ function write<T>(key: string, value: T) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(value));
   cache.set(key, value);
-  emit(key);
+  emit();
 }
 
 // ---------- threads ----------
