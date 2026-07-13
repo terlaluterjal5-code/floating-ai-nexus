@@ -158,11 +158,13 @@ export function useImages(): GeneratedImage[] {
 // ---------- credits ----------
 export function getCredits(): number {
   const v = read<number | null>(CREDITS_KEY, null);
-  if (v == null) {
+  return v == null ? START_CREDITS : v;
+}
+function ensureCreditsInit() {
+  if (typeof window === "undefined") return;
+  if (window.localStorage.getItem(CREDITS_KEY) == null) {
     write(CREDITS_KEY, START_CREDITS);
-    return START_CREDITS;
   }
-  return v;
 }
 export function spendCredits(n: number): boolean {
   const cur = getCredits();
@@ -199,6 +201,7 @@ export function usePremium(): boolean {
 export function useAutoTopup() {
   useEffect(() => {
     if (typeof window === "undefined") return;
+    ensureCreditsInit();
     const tick = () => {
       if (isPremium()) return;
       const last = read<number>(LAST_TOPUP_KEY, Date.now());
