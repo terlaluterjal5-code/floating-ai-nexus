@@ -72,7 +72,7 @@ function PremiumPage() {
           {FEATURES.map((f) => (
             <li key={f.text} className="flex items-center gap-2.5">
               <div className="rounded-lg bg-brand-gradient/20 p-1.5">
-                <f.icon className="h-3.5 w-3.5 text-gradient" />
+                <f.icon className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="flex-1 text-[13px]">{f.text}</span>
               <Check className="h-4 w-4 text-primary" />

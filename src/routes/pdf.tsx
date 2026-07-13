@@ -71,7 +71,7 @@ function PdfPage() {
     <AppShell>
       <div className="mb-3 mt-2 flex items-center gap-2 px-1">
         <div className="rounded-xl bg-brand-gradient/20 p-1.5">
-          <FileText className="h-4 w-4 text-gradient" />
+          <FileText className="h-4 w-4 text-primary" />
         </div>
         <div>
           <h1 className="text-lg font-semibold tracking-tight text-gradient">PDF Analyzer</h1>
@@ -84,7 +84,7 @@ function PdfPage() {
       {!file ? (
         <label className="glass mt-2 flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-white/15 p-6 text-center transition active:scale-[0.98]">
           <div className="rounded-2xl bg-brand-gradient/20 p-3">
-            <Upload className="h-6 w-6 text-gradient" />
+            <Upload className="h-6 w-6 text-primary" />
           </div>
           <div>
             <div className="text-[14px] font-semibold text-foreground">
@@ -103,7 +103,7 @@ function PdfPage() {
         <>
           <div className="glass flex items-center gap-3 rounded-2xl p-3">
             <div className="rounded-xl bg-brand-gradient/25 p-2.5">
-              <FileText className="h-5 w-5 text-gradient" />
+              <FileText className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13px] font-semibold">{file.name}</div>
@@ -130,7 +130,7 @@ function PdfPage() {
                 className="glass flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition active:scale-[0.97]"
               >
                 <div className="rounded-lg bg-brand-gradient/20 p-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-gradient" />
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <span className="text-[13px] font-semibold">{t.label}</span>
               </button>

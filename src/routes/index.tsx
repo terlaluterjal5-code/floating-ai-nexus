@@ -123,7 +123,7 @@ function Index() {
             className="glass flex flex-col items-center gap-1.5 rounded-2xl px-2 py-3 transition active:scale-95"
           >
             <div className="rounded-xl bg-brand-gradient/20 p-2">
-              <Icon className="h-4 w-4 text-gradient" />
+              <Icon className="h-4 w-4 text-primary" />
             </div>
             <span className="text-[11px] font-medium">{label}</span>
           </Link>
@@ -149,7 +149,7 @@ function Index() {
       {TOPICS.map(({ section, icon: SecIcon, items }) => (
         <section key={section} className="mt-6">
           <div className="mb-2 flex items-center gap-2 px-1">
-            <SecIcon className="h-4 w-4 text-gradient" />
+            <SecIcon className="h-4 w-4 text-primary" />
             <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               {section}
             </h2>
@@ -162,7 +162,7 @@ function Index() {
                 className="glass group flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition active:scale-[0.97]"
               >
                 <div className="rounded-lg bg-brand-gradient/20 p-1.5">
-                  <it.icon className="h-3.5 w-3.5 text-gradient" />
+                  <it.icon className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div className="text-[12.5px] font-medium leading-snug text-foreground/90">
                   {it.label}

@@ -71,7 +71,7 @@ function ImagePage() {
       <section className="mt-2">
         <div className="mb-3 flex items-center gap-2 px-1">
           <div className="rounded-xl bg-brand-gradient/20 p-1.5">
-            <Sparkles className="h-4 w-4 text-gradient" />
+            <Sparkles className="h-4 w-4 text-primary" />
           </div>
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-gradient">
@@ -128,7 +128,7 @@ function ImagePage() {
           <div className="relative h-full w-full">
             <div className="absolute inset-0 animate-shimmer" />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin text-gradient" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
                 Rendering…
               </span>
