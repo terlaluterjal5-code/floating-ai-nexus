@@ -43,14 +43,22 @@ const TOPUP_PER_MIN = 2; // +2 credits per minute of use
 
 // ---------- generic ls store ----------
 const listeners = new Set<() => void>();
-function emit() {
+const cache = new Map<string, unknown>();
+function bumpKey(key: string) {
+  cache.delete(key);
+}
+function emit(key?: string) {
+  if (key) bumpKey(key);
+  else cache.clear();
   listeners.forEach((l) => l());
-  if (typeof window !== "undefined")
-    window.dispatchEvent(new StorageEvent("storage", { key: "fs.tick" }));
 }
 function subscribe(cb: () => void) {
   listeners.add(cb);
-  const onStorage = () => cb();
+  const onStorage = (e: StorageEvent) => {
+    if (e.key) bumpKey(e.key);
+    else cache.clear();
+    cb();
+  };
   if (typeof window !== "undefined") window.addEventListener("storage", onStorage);
   return () => {
     listeners.delete(cb);
@@ -59,9 +67,12 @@ function subscribe(cb: () => void) {
 }
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
+  if (cache.has(key)) return cache.get(key) as T;
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
+    const val = raw ? (JSON.parse(raw) as T) : fallback;
+    cache.set(key, val);
+    return val;
   } catch {
     return fallback;
   }
@@ -69,7 +80,8 @@ function read<T>(key: string, fallback: T): T {
 function write<T>(key: string, value: T) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(value));
-  emit();
+  cache.set(key, value);
+  emit(key);
 }
 
 // ---------- threads ----------
