@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import type { ChatMode } from "./models";
 
 export type UIMessagePart =
@@ -127,11 +127,12 @@ export function newThread(mode: ChatMode): ChatThread {
 }
 
 export function useThreads(): ChatThread[] {
-  return useSyncExternalStore(
-    subscribe,
-    () => getThreads(),
-    () => EMPTY_THREADS,
-  );
+  const [v, setV] = useState<ChatThread[]>(EMPTY_THREADS);
+  useEffect(() => {
+    setV(getThreads());
+    return subscribe(() => setV(getThreads()));
+  }, []);
+  return v;
 }
 
 // ---------- images ----------
@@ -150,11 +151,12 @@ export function deleteImage(id: string) {
   );
 }
 export function useImages(): GeneratedImage[] {
-  return useSyncExternalStore(
-    subscribe,
-    () => getImages(),
-    () => EMPTY_IMAGES,
-  );
+  const [v, setV] = useState<GeneratedImage[]>(EMPTY_IMAGES);
+  useEffect(() => {
+    setV(getImages());
+    return subscribe(() => setV(getImages()));
+  }, []);
+  return v;
 }
 
 // ---------- credits ----------
@@ -185,18 +187,20 @@ export function setPremium(v: boolean) {
   if (v) write(CREDITS_KEY, MAX_CREDITS);
 }
 export function useCredits(): number {
-  return useSyncExternalStore(
-    subscribe,
-    () => getCredits(),
-    () => DEFAULT_CREDITS,
-  );
+  const [v, setV] = useState<number>(DEFAULT_CREDITS);
+  useEffect(() => {
+    setV(getCredits());
+    return subscribe(() => setV(getCredits()));
+  }, []);
+  return v;
 }
 export function usePremium(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => isPremium(),
-    () => false,
-  );
+  const [v, setV] = useState<boolean>(false);
+  useEffect(() => {
+    setV(isPremium());
+    return subscribe(() => setV(isPremium()));
+  }, []);
+  return v;
 }
 
 // gradual top-up: +TOPUP_PER_MIN credits every minute the app is open
