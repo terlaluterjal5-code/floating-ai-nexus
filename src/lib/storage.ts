@@ -41,6 +41,10 @@ export const MAX_CREDITS = 1000;
 const START_CREDITS = 250;
 const TOPUP_PER_MIN = 2; // +2 credits per minute of use
 
+const EMPTY_THREADS: ChatThread[] = [];
+const EMPTY_IMAGES: GeneratedImage[] = [];
+const DEFAULT_CREDITS = START_CREDITS;
+
 // ---------- generic ls store ----------
 const listeners = new Set<() => void>();
 const cache = new Map<string, unknown>();
