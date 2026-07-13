@@ -1,3 +1,6 @@
+const EMPTY_THREADS: ChatThread[] = [];
+const EMPTY_IMAGES: GeneratedImage[] = [];
+const DEFAULT_CREDITS = START_CREDITS;
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ChatMode } from "./models";
 
@@ -128,7 +131,7 @@ export function useThreads(): ChatThread[] {
   return useSyncExternalStore(
     subscribe,
     () => getThreads(),
-    () => [] as ChatThread[],
+    () => EMPTY_THREADS,
   );
 }
 
@@ -151,7 +154,7 @@ export function useImages(): GeneratedImage[] {
   return useSyncExternalStore(
     subscribe,
     () => getImages(),
-    () => [] as GeneratedImage[],
+    () => EMPTY_IMAGES,
   );
 }
 
@@ -186,7 +189,7 @@ export function useCredits(): number {
   return useSyncExternalStore(
     subscribe,
     () => getCredits(),
-    () => START_CREDITS,
+    () => DEFAULT_CREDITS,
   );
 }
 export function usePremium(): boolean {
