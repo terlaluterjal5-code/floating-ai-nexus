@@ -330,7 +330,7 @@ function ChatPage() {
                       className="h-4 w-4 rounded object-cover"
                     />
                   ) : (
-                    <FileText className="h-3.5 w-3.5 text-gradient" />
+                    <FileText className="h-3.5 w-3.5 text-primary" />
                   )}
                   <span className="max-w-[120px] truncate">{a.name}</span>
                   <button
@@ -437,7 +437,7 @@ function ThinkingBubble({ mode }: { mode: ChatMode }) {
     <div className="flex items-center gap-2 pl-1">
       <div className="relative flex h-6 w-6 items-center justify-center">
         <span className="absolute inset-0 rounded-full bg-brand-gradient opacity-40 blur-md animate-float-orb" />
-        <Loader2 className="relative h-4 w-4 animate-spin text-gradient" />
+        <Loader2 className="relative h-4 w-4 animate-spin text-primary" />
       </div>
       <span className="text-[12px] font-medium text-muted-foreground">
         {mode === "deep" ? "Researching…" : "Thinking…"}
