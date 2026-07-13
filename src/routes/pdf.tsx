@@ -5,7 +5,6 @@ import {
   cryptoRandom,
   newThread,
   upsertThread,
-  type ChatMessage,
 } from "@/lib/storage";
 import { FileText, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -60,16 +59,7 @@ function PdfPage() {
     if (!file) return;
     const t = newThread("deep");
     t.title = `PDF · ${file.name.slice(0, 40)}`;
-    const userMsg: ChatMessage = {
-      id: cryptoRandom(),
-      role: "user",
-      content: prompt,
-      createdAt: Date.now(),
-      attachments: [{ name: file.name, kind: "pdf" }],
-    };
-    t.messages = [userMsg];
     upsertThread(t);
-    // stash the file for the chat page to send on first turn
     sessionStorage.setItem(
       `fs.pending.${t.id}`,
       JSON.stringify({ prompt, attachments: [file] }),

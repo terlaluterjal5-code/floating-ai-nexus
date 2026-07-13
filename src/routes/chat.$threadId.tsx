@@ -184,6 +184,25 @@ function ChatPage() {
   // auto-send if ?q= present and thread empty
   useEffect(() => {
     if (!thread || autoSentRef.current) return;
+    // pending file (from PDF page)
+    const pendingRaw =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem(`fs.pending.${thread.id}`)
+        : null;
+    if (pendingRaw && thread.messages.length === 0) {
+      autoSentRef.current = true;
+      try {
+        const pending = JSON.parse(pendingRaw) as {
+          prompt: string;
+          attachments: Attachment[];
+        };
+        sessionStorage.removeItem(`fs.pending.${thread.id}`);
+        void send(pending.prompt, pending.attachments);
+      } catch {
+        sessionStorage.removeItem(`fs.pending.${thread.id}`);
+      }
+      return;
+    }
     if (q && thread.messages.length === 0) {
       autoSentRef.current = true;
       void send(q, []);
