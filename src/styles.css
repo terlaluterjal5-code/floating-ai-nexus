@@ -2,6 +2,9 @@
 @source "../src";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
+@import url("data:text/css,");
+
+/* Nebula theme background asset injected by JS via url() in body::before */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -129,12 +132,33 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
-    background-image:
+    min-height: 100dvh;
+    position: relative;
+    isolation: isolate;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background-image: var(--nebula-bg, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.55;
+    filter: saturate(1.15) contrast(1.05);
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
       radial-gradient(1200px 800px at 10% -10%, oklch(0.35 0.15 260 / 0.35), transparent 60%),
       radial-gradient(900px 700px at 100% 20%, oklch(0.32 0.18 310 / 0.28), transparent 60%),
-      radial-gradient(700px 500px at 50% 110%, oklch(0.3 0.12 200 / 0.25), transparent 60%);
-    background-attachment: fixed;
-    min-height: 100dvh;
+      radial-gradient(700px 500px at 50% 110%, oklch(0.3 0.12 200 / 0.25), transparent 60%),
+      linear-gradient(180deg, oklch(0.14 0.03 265 / 0.35), oklch(0.14 0.03 265 / 0.65));
   }
   html, body, #root { min-height: 100dvh; }
 }

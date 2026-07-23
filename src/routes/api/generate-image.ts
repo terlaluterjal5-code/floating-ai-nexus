@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { IMAGE_MODEL } from "@/lib/models";
+import { IMAGE_MODEL, IMAGE_PROMPT_PREFIX } from "@/lib/models";
 
 export const Route = createFileRoute("/api/generate-image")({
   server: {
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/generate-image")({
             messages: [
               {
                 role: "user",
-                content: `Ultra realistic HD photograph, photorealistic detail, cinematic lighting, high resolution. Subject: ${prompt}`,
+                content: `${IMAGE_PROMPT_PREFIX} ${prompt}`,
               },
             ],
             modalities: ["image", "text"],
