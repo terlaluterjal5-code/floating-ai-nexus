@@ -3,8 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { BrandMark } from "./BrandLogo";
 import { CreditsBattery } from "./CreditsBattery";
-import { History } from "lucide-react";
+import { History, User as UserIcon } from "lucide-react";
 import { useAutoTopup } from "@/lib/storage";
+import { useSession, useProfile } from "@/lib/auth";
 
 export function AppShell({
   children,
@@ -16,6 +17,10 @@ export function AppShell({
   hideHeader?: boolean;
 }) {
   useAutoTopup();
+  const { user } = useSession();
+  const profile = useProfile(user);
+  const avatar =
+    profile?.avatar_url || (user?.user_metadata?.avatar_url as string | undefined);
   return (
     <div className="relative mx-auto flex min-h-[100dvh] max-w-md flex-col">
       {!hideHeader && (
@@ -32,6 +37,17 @@ export function AppShell({
                 className="glass flex h-8 w-8 items-center justify-center rounded-full text-foreground/80 transition active:scale-95"
               >
                 <History className="h-4 w-4" />
+              </Link>
+              <Link
+                to={user ? "/profile" : "/auth"}
+                aria-label={user ? "Profile" : "Sign in"}
+                className="glass flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-foreground/80 transition active:scale-95"
+              >
+                {avatar ? (
+                  <img src={avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <UserIcon className="h-4 w-4" />
+                )}
               </Link>
               {headerRight}
             </div>

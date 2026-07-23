@@ -36,6 +36,7 @@ const IMAGES_KEY = "fs.images.v1";
 const CREDITS_KEY = "fs.credits.v1";
 const PREMIUM_KEY = "fs.premium.v1";
 const LAST_TOPUP_KEY = "fs.lastTopup.v1";
+const TRIAL_ENDS_KEY = "fs.trialEndsAt.v1";
 
 export const MAX_CREDITS = 1000;
 const START_CREDITS = 250;
@@ -180,11 +181,38 @@ export function addCredits(n: number) {
   write(CREDITS_KEY, Math.min(MAX_CREDITS, getCredits() + n));
 }
 export function isPremium(): boolean {
-  return read<boolean>(PREMIUM_KEY, false);
+  if (read<boolean>(PREMIUM_KEY, false)) return true;
+  return isTrialActive();
 }
 export function setPremium(v: boolean) {
   write(PREMIUM_KEY, v);
   if (v) write(CREDITS_KEY, MAX_CREDITS);
+}
+
+// ---------- 2-day premium trial (synced from profiles.trial_ends_at) ----------
+export function getTrialEndsAt(): number | null {
+  return read<number | null>(TRIAL_ENDS_KEY, null);
+}
+export function setTrialEndsAt(ts: number | null) {
+  if (ts == null) {
+    if (typeof window !== "undefined") window.localStorage.removeItem(TRIAL_ENDS_KEY);
+    cache.delete(TRIAL_ENDS_KEY);
+    emit();
+  } else {
+    write(TRIAL_ENDS_KEY, ts);
+  }
+}
+export function isTrialActive(): boolean {
+  const t = getTrialEndsAt();
+  return t != null && t > Date.now();
+}
+export function useTrialEndsAt(): number | null {
+  const [v, setV] = useState<number | null>(null);
+  useEffect(() => {
+    setV(getTrialEndsAt());
+    return subscribe(() => setV(getTrialEndsAt()));
+  }, []);
+  return v;
 }
 export function useCredits(): number {
   const [v, setV] = useState<number>(DEFAULT_CREDITS);
