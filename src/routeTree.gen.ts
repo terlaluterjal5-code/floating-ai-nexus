@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as PdfRouteImport } from './routes/pdf'
 import { Route as ImageRouteImport } from './routes/image'
@@ -20,6 +21,11 @@ import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PremiumRoute = PremiumRouteImport.update({
   id: '/premium',
   path: '/premium',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
   '/premium': typeof PremiumRoute
+  '/profile': typeof ProfileRoute
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
   '/premium': typeof PremiumRoute
+  '/profile': typeof ProfileRoute
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
   '/premium': typeof PremiumRoute
+  '/profile': typeof ProfileRoute
   '/api/chat': typeof ApiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/image'
     | '/pdf'
     | '/premium'
+    | '/profile'
     | '/api/chat'
     | '/api/generate-image'
     | '/chat/$threadId'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/image'
     | '/pdf'
     | '/premium'
+    | '/profile'
     | '/api/chat'
     | '/api/generate-image'
     | '/chat/$threadId'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/image'
     | '/pdf'
     | '/premium'
+    | '/profile'
     | '/api/chat'
     | '/api/generate-image'
     | '/chat/$threadId'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   ImageRoute: typeof ImageRoute
   PdfRoute: typeof PdfRoute
   PremiumRoute: typeof PremiumRoute
+  ProfileRoute: typeof ProfileRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
@@ -162,6 +175,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/premium': {
       id: '/premium'
       path: '/premium'
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImageRoute: ImageRoute,
   PdfRoute: PdfRoute,
   PremiumRoute: PremiumRoute,
+  ProfileRoute: ProfileRoute,
   ApiChatRoute: ApiChatRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
