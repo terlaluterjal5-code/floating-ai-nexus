@@ -1,11 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import {
-  cryptoRandom,
-  newThread,
-  upsertThread,
-} from "@/lib/storage";
+import { createConversation } from "@/lib/conversations";
+import { useSession } from "@/lib/auth";
 import { FileText, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +34,7 @@ const TASKS = [
 
 function PdfPage() {
   const nav = useNavigate();
+  const { user } = useSession();
   const [file, setFile] = useState<{ name: string; mime: string; dataUrl: string; size: number } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -55,16 +53,22 @@ function PdfPage() {
     }
   }
 
-  function launchWithPrompt(prompt: string) {
+  async function launchWithPrompt(prompt: string) {
     if (!file) return;
-    const t = newThread("deep");
-    t.title = `PDF · ${file.name.slice(0, 40)}`;
-    upsertThread(t);
-    sessionStorage.setItem(
-      `fs.pending.${t.id}`,
-      JSON.stringify({ prompt, attachments: [file] }),
-    );
-    nav({ to: "/chat/$threadId", params: { threadId: t.id } });
+    if (!user) {
+      nav({ to: "/auth" });
+      return;
+    }
+    try {
+      const conv = await createConversation(user.id, "deep", `PDF · ${file.name.slice(0, 40)}`);
+      sessionStorage.setItem(
+        `fs.pending.${conv.id}`,
+        JSON.stringify({ prompt, attachments: [file] }),
+      );
+      nav({ to: "/chat/$threadId", params: { threadId: conv.id } });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   }
 
   return (

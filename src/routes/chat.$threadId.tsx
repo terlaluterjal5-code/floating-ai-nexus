@@ -1,24 +1,26 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { AppShell } from "@/components/AppShell";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ChatMarkdown } from "@/components/ChatMarkdown";
 import { ModeSelector } from "@/components/ModeSelector";
-import {
-  cryptoRandom,
-  getThread,
-  isPremium,
-  newThread,
-  spendCredits,
-  upsertThread,
-  useHydrated,
-  type ChatMessage,
-  type ChatThread,
-} from "@/lib/storage";
+import { useSession } from "@/lib/auth";
+import { isPremium, spendCredits, useHydrated } from "@/lib/storage";
 import { MODES, type ChatMode } from "@/lib/models";
 import { streamChat, type SendMessage } from "@/lib/streamChat";
-import { ArrowUp, Paperclip, Plus, Square, X, FileText, Loader2 } from "lucide-react";
+import {
+  createConversation,
+  deleteConversation,
+  getConversation,
+  insertMessage,
+  listMessages,
+  touchConversation,
+  updateConversation,
+  type Conversation,
+  type Message,
+} from "@/lib/conversations";
+import { ArrowUp, Paperclip, Plus, Square, X, FileText, Loader2, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const searchSchema = z.object({ q: z.string().optional() });
@@ -39,13 +41,25 @@ function fileToDataUrl(f: File): Promise<string> {
   });
 }
 
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  return sameDay
+    ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
 function ChatPage() {
   const { threadId } = Route.useParams();
   const { q } = Route.useSearch();
   const navigate = useNavigate();
   const hydrated = useHydrated();
+  const { user, loading: sessionLoading } = useSession();
 
-  const [thread, setThread] = useState<ChatThread | null>(null);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   const [input, setInput] = useState(q ?? "");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -55,66 +69,83 @@ function ChatPage() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const autoSentRef = useRef(false);
 
-  // load or create thread
   useEffect(() => {
-    if (!hydrated) return;
-    const t = getThread(threadId);
-    if (t) {
-      setThread(t);
-    } else {
-      const nt = { ...newThread("standard"), id: threadId };
-      upsertThread(nt);
-      setThread(nt);
-    }
-  }, [threadId, hydrated]);
-
-  const persist = useCallback((next: ChatThread) => {
-    setThread(next);
-    upsertThread(next);
-  }, []);
+    if (!hydrated || !user) return;
+    let alive = true;
+    setLoading(true);
+    (async () => {
+      try {
+        const conv = await getConversation(threadId);
+        if (!alive) return;
+        if (!conv) {
+          toast.error("Conversation not found");
+          navigate({ to: "/history" });
+          return;
+        }
+        setConversation(conv);
+        const msgs = await listMessages(threadId);
+        if (!alive) return;
+        setMessages(msgs);
+      } catch (e) {
+        toast.error((e as Error).message || "Failed to load conversation");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [threadId, user, hydrated, navigate]);
 
   const setMode = useCallback(
-    (mode: ChatMode) => {
-      if (!thread) return;
-      persist({ ...thread, mode, updatedAt: Date.now() });
+    async (mode: ChatMode) => {
+      if (!conversation) return;
+      setConversation({ ...conversation, mode });
+      try {
+        await updateConversation(conversation.id, { mode });
+      } catch (e) {
+        toast.error((e as Error).message);
+      }
     },
-    [thread, persist],
+    [conversation],
   );
 
   const send = useCallback(
     async (text: string, atts: Attachment[]) => {
-      if (!thread) return;
+      if (!conversation || !user) return;
       const trimmed = text.trim();
       if (!trimmed && atts.length === 0) return;
-      const mode = thread.mode;
+      const mode = conversation.mode;
       const cost = MODES[mode].cost;
       if (!isPremium() && !spendCredits(cost)) {
         toast.error("Not enough credits. Try Basic mode, wait for top-up, or upgrade to Premium.");
         return;
       }
 
-      const userMsg: ChatMessage = {
-        id: cryptoRandom(),
-        role: "user",
-        content: trimmed,
-        createdAt: Date.now(),
-        attachments: atts.map((a) => ({
-          name: a.name,
-          kind: a.mime.startsWith("image/") ? "image" : "pdf",
-        })),
-      };
-      const nextMessages = [...thread.messages, userMsg];
-      const nextTitle =
-        thread.messages.length === 0 && trimmed
-          ? trimmed.slice(0, 48)
-          : thread.title;
-      const withUser: ChatThread = {
-        ...thread,
-        messages: nextMessages,
-        title: nextTitle,
-        updatedAt: Date.now(),
-      };
-      persist(withUser);
+      const attSummaries = atts.map((a) => ({
+        name: a.name,
+        kind: a.mime.startsWith("image/") ? ("image" as const) : ("pdf" as const),
+      }));
+
+      let userMsg: Message;
+      try {
+        userMsg = await insertMessage(user.id, conversation.id, "user", trimmed, attSummaries);
+      } catch (e) {
+        toast.error((e as Error).message || "Failed to save message");
+        return;
+      }
+
+      const isFirst = messages.length === 0;
+      const newTitle = isFirst && trimmed ? trimmed.slice(0, 60) : undefined;
+      const nextMessages = [...messages, userMsg];
+      setMessages(nextMessages);
+      setConversation({
+        ...conversation,
+        title: newTitle ?? conversation.title,
+        updated_at: new Date().toISOString(),
+      });
+      touchConversation(conversation.id, newTitle).catch(() => {});
+
       setInput("");
       setAttachments([]);
       setStreamText("");
@@ -126,14 +157,14 @@ function ChatPage() {
       const wire: SendMessage[] = nextMessages.map((m, i) => {
         const isLast = i === nextMessages.length - 1;
         return {
-          role: m.role,
+          role: m.role === "assistant" ? "assistant" : "user",
           content: m.content,
           attachments: isLast ? atts : undefined,
         };
       });
 
+      let acc = "";
       try {
-        let acc = "";
         await streamChat(
           wire,
           mode,
@@ -143,34 +174,26 @@ function ChatPage() {
           },
           controller.signal,
         );
-        const assistantMsg: ChatMessage = {
-          id: cryptoRandom(),
-          role: "assistant",
-          content: acc,
-          createdAt: Date.now(),
-        };
-        const done: ChatThread = {
-          ...withUser,
-          messages: [...nextMessages, assistantMsg],
-          updatedAt: Date.now(),
-        };
-        persist(done);
       } catch (e) {
-        if ((e as Error).name === "AbortError") {
-          const assistantMsg: ChatMessage = {
-            id: cryptoRandom(),
-            role: "assistant",
-            content: (streamText || "") + "\n\n_(stopped)_",
-            createdAt: Date.now(),
-          };
-          persist({
-            ...withUser,
-            messages: [...nextMessages, assistantMsg],
-            updatedAt: Date.now(),
-          });
+        if ((e as Error).name !== "AbortError") {
+          toast.error((e as Error).message || "Streaming failed");
         } else {
-          toast.error((e as Error).message || "Something went wrong");
+          acc = acc + "\n\n_(stopped)_";
         }
+      }
+
+      try {
+        const assistantMsg = await insertMessage(
+          user.id,
+          conversation.id,
+          "assistant",
+          acc,
+          [],
+        );
+        setMessages((prev) => [...prev, assistantMsg]);
+        touchConversation(conversation.id).catch(() => {});
+      } catch (e) {
+        toast.error((e as Error).message || "Failed to save reply");
       } finally {
         setStreaming(false);
         setStreamText("");
@@ -178,54 +201,48 @@ function ChatPage() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [thread, persist],
+    [conversation, user, messages],
   );
 
-  // auto-send if ?q= present and thread empty
+  // auto-send from ?q= or PDF pending
   useEffect(() => {
-    if (!thread || autoSentRef.current) return;
-    // pending file (from PDF page)
+    if (!conversation || autoSentRef.current || loading) return;
     const pendingRaw =
       typeof window !== "undefined"
-        ? sessionStorage.getItem(`fs.pending.${thread.id}`)
+        ? sessionStorage.getItem(`fs.pending.${conversation.id}`)
         : null;
-    if (pendingRaw && thread.messages.length === 0) {
+    if (pendingRaw && messages.length === 0) {
       autoSentRef.current = true;
       try {
-        const pending = JSON.parse(pendingRaw) as {
-          prompt: string;
-          attachments: Attachment[];
-        };
-        sessionStorage.removeItem(`fs.pending.${thread.id}`);
+        const pending = JSON.parse(pendingRaw) as { prompt: string; attachments: Attachment[] };
+        sessionStorage.removeItem(`fs.pending.${conversation.id}`);
         void send(pending.prompt, pending.attachments);
       } catch {
-        sessionStorage.removeItem(`fs.pending.${thread.id}`);
+        sessionStorage.removeItem(`fs.pending.${conversation.id}`);
       }
       return;
     }
-    if (q && thread.messages.length === 0) {
+    if (q && messages.length === 0) {
       autoSentRef.current = true;
       void send(q, []);
       navigate({
         to: "/chat/$threadId",
-        params: { threadId: thread.id },
+        params: { threadId: conversation.id },
         replace: true,
       });
     }
-  }, [thread, q, send, navigate]);
+  }, [conversation, messages.length, q, send, navigate, loading]);
 
-  // scroll to bottom on new content
   useLayoutEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [thread?.messages, streamText]);
+  }, [messages, streamText]);
 
-  // focus input
   useEffect(() => {
     if (!streaming) inputRef.current?.focus();
   }, [streaming, threadId]);
 
-  const empty = useMemo(() => !thread || thread.messages.length === 0, [thread]);
+  const empty = useMemo(() => messages.length === 0, [messages]);
 
   async function onFiles(files: FileList | null) {
     if (!files) return;
@@ -241,17 +258,45 @@ function ChatPage() {
     setAttachments((p) => [...p, ...arr]);
   }
 
-  function newChat() {
-    const t = newThread(thread?.mode ?? "standard");
-    upsertThread(t);
-    navigate({ to: "/chat/$threadId", params: { threadId: t.id } });
+  async function newChat() {
+    if (!user) return;
+    try {
+      const conv = await createConversation(user.id, conversation?.mode ?? "standard");
+      navigate({ to: "/chat/$threadId", params: { threadId: conv.id } });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function rename() {
+    if (!conversation) return;
+    const next = prompt("Rename conversation", conversation.title);
+    if (!next || next === conversation.title) return;
+    setConversation({ ...conversation, title: next });
+    try {
+      await updateConversation(conversation.id, { title: next });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function remove() {
+    if (!conversation) return;
+    if (!confirm("Delete this conversation?")) return;
+    try {
+      await deleteConversation(conversation.id);
+      navigate({ to: "/history" });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  if (hydrated && !sessionLoading && !user) {
+    return <Navigate to="/auth" />;
   }
 
   return (
-    <AppShell
-      hideHeader
-    >
-      {/* Custom sticky header for chat */}
+    <AppShell hideHeader>
       <div className="sticky top-0 z-30 -mx-4 mb-3 px-4 pt-[calc(env(safe-area-inset-top)+10px)]">
         <div className="glass flex items-center gap-2 rounded-2xl px-2.5 py-2">
           <Link
@@ -263,12 +308,30 @@ function ChatPage() {
           </Link>
           <div className="flex-1 truncate px-1">
             <div className="truncate text-[13px] font-semibold leading-tight text-foreground/95">
-              {thread?.title || "New chat"}
+              {conversation?.title || "New chat"}
             </div>
             <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
-              {thread ? MODES[thread.mode].label : "…"}
+              {conversation ? MODES[conversation.mode].label : "…"}
             </div>
           </div>
+          {conversation && (
+            <>
+              <button
+                onClick={rename}
+                className="glass flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95"
+                aria-label="Rename"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={remove}
+                className="glass flex h-8 w-8 items-center justify-center rounded-full text-red-400 transition active:scale-95"
+                aria-label="Delete"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
           <button
             onClick={newChat}
             className="glass flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95"
@@ -276,7 +339,7 @@ function ChatPage() {
           >
             <Plus className="h-4 w-4" />
           </button>
-          {thread && <ModeSelector value={thread.mode} onChange={setMode} />}
+          {conversation && <ModeSelector value={conversation.mode} onChange={setMode} />}
         </div>
       </div>
 
@@ -285,18 +348,24 @@ function ChatPage() {
         className="flex flex-col gap-3 overflow-y-auto pb-2"
         style={{ minHeight: "calc(100dvh - 260px)" }}
       >
-        {empty && (
+        {loading && (
+          <div className="flex items-center justify-center gap-2 pt-8 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-[12px]">Loading conversation…</span>
+          </div>
+        )}
+        {!loading && empty && (
           <div className="mt-8 flex flex-col items-center gap-3 px-6 text-center">
             <BrandLogo size={64} />
             <h2 className="text-lg font-semibold text-gradient">
               How can I help you today?
             </h2>
             <p className="text-[12px] text-muted-foreground">
-              {thread ? MODES[thread.mode].desc : ""}
+              {conversation ? MODES[conversation.mode].desc : ""}
             </p>
           </div>
         )}
-        {thread?.messages.map((m) => (
+        {messages.map((m) => (
           <MessageBubble key={m.id} message={m} />
         ))}
         {streaming && (
@@ -307,13 +376,12 @@ function ChatPage() {
                 <span className="ml-0.5 inline-block h-3 w-1.5 translate-y-0.5 animate-pulse bg-primary" />
               </div>
             ) : (
-              <ThinkingBubble mode={thread?.mode ?? "standard"} />
+              <ThinkingBubble mode={conversation?.mode ?? "standard"} />
             )}
           </div>
         )}
       </div>
 
-      {/* Composer */}
       <div className="fixed inset-x-0 bottom-[76px] z-30 px-3 pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-md">
           {attachments.length > 0 && (
@@ -324,19 +392,13 @@ function ChatPage() {
                   className="glass flex items-center gap-1.5 rounded-full py-1 pl-2 pr-1 text-[11px]"
                 >
                   {a.mime.startsWith("image/") ? (
-                    <img
-                      src={a.dataUrl}
-                      alt=""
-                      className="h-4 w-4 rounded object-cover"
-                    />
+                    <img src={a.dataUrl} alt="" className="h-4 w-4 rounded object-cover" />
                   ) : (
                     <FileText className="h-3.5 w-3.5 text-primary" />
                   )}
                   <span className="max-w-[120px] truncate">{a.name}</span>
                   <button
-                    onClick={() =>
-                      setAttachments((p) => p.filter((_, idx) => idx !== i))
-                    }
+                    onClick={() => setAttachments((p) => p.filter((_, idx) => idx !== i))}
                     className="ml-0.5 flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-white/10"
                     aria-label="Remove attachment"
                   >
@@ -348,7 +410,7 @@ function ChatPage() {
           )}
           <div className="glass flex items-end gap-1.5 rounded-3xl p-1.5 shadow-2xl shadow-black/40">
             <label className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition active:scale-90 hover:text-foreground">
-              <Paperclip className="h-4.5 w-4.5" />
+              <Paperclip className="h-4 w-4" />
               <input
                 type="file"
                 className="hidden"
@@ -392,7 +454,7 @@ function ChatPage() {
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-brand-foreground shadow-lg shadow-primary/40 transition active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Send"
               >
-                <ArrowUp className="h-4.5 w-4.5" strokeWidth={2.5} />
+                <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
               </button>
             )}
           </div>
@@ -402,10 +464,11 @@ function ChatPage() {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({ message }: { message: Message }) {
+  const time = formatTime(message.created_at);
   if (message.role === "user") {
     return (
-      <div className="flex justify-end pl-6 animate-fade-in">
+      <div className="flex flex-col items-end pl-6 animate-fade-in">
         <div className="rounded-2xl bg-brand-gradient px-3.5 py-2 text-[14px] text-brand-foreground shadow-lg shadow-primary/20">
           {message.attachments && message.attachments.length > 0 && (
             <div className="mb-1.5 flex flex-wrap gap-1">
@@ -422,12 +485,14 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           )}
           {message.content && <div className="whitespace-pre-wrap">{message.content}</div>}
         </div>
+        <div className="mt-1 pr-1 text-[10px] text-muted-foreground">{time}</div>
       </div>
     );
   }
   return (
     <div className="animate-fade-in pl-1 pr-2">
       <ChatMarkdown text={message.content} />
+      <div className="mt-1 pl-1 text-[10px] text-muted-foreground">{time}</div>
     </div>
   );
 }

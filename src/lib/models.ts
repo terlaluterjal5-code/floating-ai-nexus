@@ -16,7 +16,7 @@ export const MODES: Record<
   standard: {
     label: "Standard",
     short: "Balanced",
-    model: "openai/gpt-5.5",
+    model: "openai/gpt-5",
     cost: 3,
     desc: "Balanced, well reasoned answers with detail.",
     system:
@@ -25,7 +25,7 @@ export const MODES: Record<
   deep: {
     label: "Deep Research",
     short: "Deep",
-    model: "openai/gpt-5.5",
+    model: "openai/gpt-5",
     cost: 8,
     desc: "Comprehensive research-grade analysis with structured reports.",
     system:

@@ -1,16 +1,17 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { useSession } from "@/lib/auth";
+import { useHydrated } from "@/lib/storage";
 import {
-  deleteThread,
-  newThread,
-  togglePin,
-  upsertThread,
-  useHydrated,
-  useThreads,
-} from "@/lib/storage";
+  createConversation,
+  deleteConversation,
+  updateConversation,
+  useConversations,
+} from "@/lib/conversations";
 import { MODES } from "@/lib/models";
-import { Plus, Search, Trash2, Pin, MessagesSquare } from "lucide-react";
+import { Plus, Search, Trash2, Pin, Pencil, MessagesSquare, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/history")({
   head: () => ({
@@ -21,24 +22,72 @@ export const Route = createFileRoute("/history")({
 
 function HistoryPage() {
   const hydrated = useHydrated();
-  const threads = useThreads();
+  const { user, loading } = useSession();
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const nav = useNavigate();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return threads;
-    return threads.filter(
-      (t) =>
-        t.title.toLowerCase().includes(s) ||
-        t.messages.some((m) => m.content.toLowerCase().includes(s)),
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const { items, loading: listLoading, loadingMore, hasMore, loadMore, refresh } =
+    useConversations(user?.id, debouncedQ);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMore();
+      },
+      { rootMargin: "200px" },
     );
-  }, [threads, q]);
+    obs.observe(sentinelRef.current);
+    return () => obs.disconnect();
+  }, [loadMore]);
 
-  function create() {
-    const t = newThread("standard");
-    upsertThread(t);
-    nav({ to: "/chat/$threadId", params: { threadId: t.id } });
+  if (hydrated && !loading && !user) return <Navigate to="/auth" />;
+
+  async function create() {
+    if (!user) return;
+    try {
+      const conv = await createConversation(user.id, "standard");
+      nav({ to: "/chat/$threadId", params: { threadId: conv.id } });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function rename(id: string, current: string) {
+    const next = prompt("Rename conversation", current);
+    if (!next || next === current) return;
+    try {
+      await updateConversation(id, { title: next });
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function togglePin(id: string, pinned: boolean) {
+    try {
+      await updateConversation(id, { pinned: !pinned });
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this conversation?")) return;
+    try {
+      await deleteConversation(id);
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   }
 
   return (
@@ -64,16 +113,22 @@ function HistoryPage() {
       </div>
 
       <div className="mt-3 flex flex-col gap-1.5">
-        {hydrated && filtered.length === 0 && (
+        {listLoading && items.length === 0 && (
+          <div className="glass mt-4 flex items-center justify-center gap-2 rounded-2xl p-6 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-[12px]">Loading…</span>
+          </div>
+        )}
+        {!listLoading && items.length === 0 && (
           <div className="glass mt-4 rounded-2xl p-6 text-center">
             <MessagesSquare className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
             <p className="text-[12px] text-muted-foreground">
-              {threads.length === 0 ? "No conversations yet." : "No matches."}
+              {debouncedQ ? "No matches." : "No conversations yet."}
             </p>
           </div>
         )}
-        {filtered.map((t) => (
-          <div key={t.id} className="glass flex items-center gap-2 rounded-2xl p-2">
+        {items.map((t) => (
+          <div key={t.id} className="glass flex items-center gap-1 rounded-2xl p-2">
             <Link
               to="/chat/$threadId"
               params={{ threadId: t.id }}
@@ -88,29 +143,44 @@ function HistoryPage() {
               <div className="mt-0.5 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground">
                 <span>{MODES[t.mode].label}</span>
                 <span>·</span>
-                <span>{t.messages.length} msg</span>
-                <span>·</span>
-                <span>{new Date(t.updatedAt).toLocaleDateString()}</span>
+                <span>{new Date(t.updated_at).toLocaleString()}</span>
               </div>
             </Link>
             <button
-              onClick={() => togglePin(t.id)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-primary"
+              onClick={() => togglePin(t.id, t.pinned)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-primary active:scale-95"
               aria-label="Pin"
             >
-              <Pin className={`h-3.5 w-3.5 ${t.pinned ? "fill-current text-primary" : ""}`} />
+              <Pin className={`h-3.5 w-3.5 ${t.pinned ? "text-primary" : ""}`} />
             </button>
             <button
-              onClick={() => {
-                if (confirm("Delete this conversation?")) deleteThread(t.id);
-              }}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-destructive"
+              onClick={() => rename(t.id, t.title)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground active:scale-95"
+              aria-label="Rename"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => remove(t.id)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-red-400 active:scale-95"
               aria-label="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
         ))}
+        <div ref={sentinelRef} className="h-8" />
+        {loadingMore && (
+          <div className="flex items-center justify-center gap-2 py-2 text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span className="text-[11px]">Loading more…</span>
+          </div>
+        )}
+        {!hasMore && items.length > 0 && (
+          <div className="py-2 text-center text-[10px] text-muted-foreground">
+            End of history
+          </div>
+        )}
       </div>
     </AppShell>
   );
