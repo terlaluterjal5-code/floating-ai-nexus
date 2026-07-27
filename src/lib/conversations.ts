@@ -89,7 +89,9 @@ export async function deleteConversation(id: string): Promise<void> {
 }
 
 export async function touchConversation(id: string, title?: string): Promise<void> {
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const patch: { updated_at: string; title?: string } = {
+    updated_at: new Date().toISOString(),
+  };
   if (title) patch.title = title;
   const { error } = await supabase.from("conversations").update(patch).eq("id", id);
   if (error) throw error;
