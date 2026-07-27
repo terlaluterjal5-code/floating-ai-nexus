@@ -1,17 +1,21 @@
+import logoAsset from "@/assets/floating-space-logo.png.asset.json";
+
 export function BrandLogo({ size = 32 }: { size?: number }) {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
       <div
-        className="absolute inset-0 rounded-full bg-brand-gradient blur-md opacity-70 animate-float-orb"
+        className="absolute inset-0 rounded-full bg-brand-gradient blur-lg opacity-60 animate-float-orb"
         aria-hidden
       />
-      <div
-        className="relative rounded-full bg-brand-gradient shadow-[0_0_20px_oklch(0.78_0.16_220/0.6)]"
-        style={{ width: size * 0.7, height: size * 0.7 }}
-      />
-      <div
-        className="absolute inset-0 rounded-full border border-white/20"
-        aria-hidden
+      <img
+        src={logoAsset.url}
+        alt="FloatingSpace logo"
+        className="relative h-full w-full object-contain drop-shadow-[0_0_10px_oklch(0.78_0.16_220/0.55)]"
+        style={{ filter: "invert(1)" }}
+        draggable={false}
       />
     </div>
   );
