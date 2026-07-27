@@ -18,8 +18,10 @@ import {
   Telescope,
   Crown,
 } from "lucide-react";
-import { newThread, upsertThread } from "@/lib/storage";
+import { createConversation } from "@/lib/conversations";
+import { useSession } from "@/lib/auth";
 import type { ChatMode } from "@/lib/models";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -61,16 +63,23 @@ const TOPICS = [
 
 function Index() {
   const navigate = useNavigate();
+  const { user } = useSession();
 
-  function startChat(prompt: string, mode: ChatMode = "standard") {
-    const t = newThread(mode);
-    t.title = prompt.slice(0, 48);
-    upsertThread(t);
-    navigate({
-      to: "/chat/$threadId",
-      params: { threadId: t.id },
-      search: { q: prompt },
-    });
+  async function startChat(prompt: string, mode: ChatMode = "standard") {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    try {
+      const conv = await createConversation(user.id, mode, prompt ? prompt.slice(0, 60) : "New chat");
+      navigate({
+        to: "/chat/$threadId",
+        params: { threadId: conv.id },
+        search: { q: prompt || undefined },
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   }
 
   return (
