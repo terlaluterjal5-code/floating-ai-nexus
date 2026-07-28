@@ -1,4 +1,5 @@
 import type { ChatMode } from "./models";
+import { supabase } from "@/integrations/supabase/client";
 
 export type SendMessage = {
   role: "user" | "assistant";
@@ -11,16 +12,25 @@ export async function streamChat(
   mode: ChatMode,
   onDelta: (chunk: string) => void,
   signal?: AbortSignal,
+  conversationId?: string,
 ): Promise<string> {
-  const res = await fetch("/api/chat", {
+  const { data: sess } = await supabase.auth.getSession();
+  const token = sess.session?.access_token;
+  if (!token) throw new Error("You must be signed in.");
+  const res = await fetch("/api/ai-chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, mode }),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ messages, mode, conversationId }),
     signal,
   });
   if (!res.ok || !res.body) {
     const text = await res.text().catch(() => "");
-    throw new Error(text || `Request failed (${res.status})`);
+    try {
+      const j = JSON.parse(text) as { error?: { message?: string } };
+      throw new Error(j.error?.message || text || `Request failed (${res.status})`);
+    } catch {
+      throw new Error(text || `Request failed (${res.status})`);
+    }
   }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

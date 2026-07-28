@@ -18,8 +18,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
+import { Route as ApiUsageWorkerRouteImport } from './routes/api/usage-worker'
+import { Route as ApiMemoryWorkerRouteImport } from './routes/api/memory-worker'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
-import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
@@ -66,14 +68,24 @@ const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
   path: '/chat/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUsageWorkerRoute = ApiUsageWorkerRouteImport.update({
+  id: '/api/usage-worker',
+  path: '/api/usage-worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMemoryWorkerRoute = ApiMemoryWorkerRouteImport.update({
+  id: '/api/memory-worker',
+  path: '/api/memory-worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
   id: '/api/generate-image',
   path: '/api/generate-image',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiChatRoute = ApiChatRouteImport.update({
-  id: '/api/chat',
-  path: '/api/chat',
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai-chat',
+  path: '/api/ai-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -85,8 +97,10 @@ export interface FileRoutesByFullPath {
   '/pdf': typeof PdfRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
+  '/api/memory-worker': typeof ApiMemoryWorkerRoute
+  '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
 }
@@ -98,8 +112,10 @@ export interface FileRoutesByTo {
   '/pdf': typeof PdfRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
+  '/api/memory-worker': typeof ApiMemoryWorkerRoute
+  '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat': typeof ChatIndexRoute
 }
@@ -112,8 +128,10 @@ export interface FileRoutesById {
   '/pdf': typeof PdfRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
+  '/api/memory-worker': typeof ApiMemoryWorkerRoute
+  '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
 }
@@ -127,8 +145,10 @@ export interface FileRouteTypes {
     | '/pdf'
     | '/premium'
     | '/profile'
-    | '/api/chat'
+    | '/api/ai-chat'
     | '/api/generate-image'
+    | '/api/memory-worker'
+    | '/api/usage-worker'
     | '/chat/$threadId'
     | '/chat/'
   fileRoutesByTo: FileRoutesByTo
@@ -140,8 +160,10 @@ export interface FileRouteTypes {
     | '/pdf'
     | '/premium'
     | '/profile'
-    | '/api/chat'
+    | '/api/ai-chat'
     | '/api/generate-image'
+    | '/api/memory-worker'
+    | '/api/usage-worker'
     | '/chat/$threadId'
     | '/chat'
   id:
@@ -153,8 +175,10 @@ export interface FileRouteTypes {
     | '/pdf'
     | '/premium'
     | '/profile'
-    | '/api/chat'
+    | '/api/ai-chat'
     | '/api/generate-image'
+    | '/api/memory-worker'
+    | '/api/usage-worker'
     | '/chat/$threadId'
     | '/chat/'
   fileRoutesById: FileRoutesById
@@ -167,8 +191,10 @@ export interface RootRouteChildren {
   PdfRoute: typeof PdfRoute
   PremiumRoute: typeof PremiumRoute
   ProfileRoute: typeof ProfileRoute
-  ApiChatRoute: typeof ApiChatRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
+  ApiMemoryWorkerRoute: typeof ApiMemoryWorkerRoute
+  ApiUsageWorkerRoute: typeof ApiUsageWorkerRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
   ChatIndexRoute: typeof ChatIndexRoute
 }
@@ -238,6 +264,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/usage-worker': {
+      id: '/api/usage-worker'
+      path: '/api/usage-worker'
+      fullPath: '/api/usage-worker'
+      preLoaderRoute: typeof ApiUsageWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/memory-worker': {
+      id: '/api/memory-worker'
+      path: '/api/memory-worker'
+      fullPath: '/api/memory-worker'
+      preLoaderRoute: typeof ApiMemoryWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/generate-image': {
       id: '/api/generate-image'
       path: '/api/generate-image'
@@ -245,11 +285,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateImageRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/chat': {
-      id: '/api/chat'
-      path: '/api/chat'
-      fullPath: '/api/chat'
-      preLoaderRoute: typeof ApiChatRouteImport
+    '/api/ai-chat': {
+      id: '/api/ai-chat'
+      path: '/api/ai-chat'
+      fullPath: '/api/ai-chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -263,21 +303,13 @@ const rootRouteChildren: RootRouteChildren = {
   PdfRoute: PdfRoute,
   PremiumRoute: PremiumRoute,
   ProfileRoute: ProfileRoute,
-  ApiChatRoute: ApiChatRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
+  ApiMemoryWorkerRoute: ApiMemoryWorkerRoute,
+  ApiUsageWorkerRoute: ApiUsageWorkerRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
   ChatIndexRoute: ChatIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

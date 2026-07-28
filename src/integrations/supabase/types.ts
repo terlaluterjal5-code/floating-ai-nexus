@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_summaries: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message_count: number
+          summary: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message_count?: number
+          summary?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message_count?: number
+          summary?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_summaries_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
@@ -43,6 +81,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      memories: {
+        Row: {
+          content: string
+          content_hash: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          importance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          content_hash: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          importance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          content_hash?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          importance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memories_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -114,6 +193,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      usage_logs: {
+        Row: {
+          completion_tokens: number
+          conversation_id: string | null
+          cost_usd: number
+          created_at: string
+          endpoint: string
+          error: string | null
+          id: string
+          latency_ms: number
+          model: string
+          prompt_tokens: number
+          status: string
+          total_tokens: number
+          user_id: string
+        }
+        Insert: {
+          completion_tokens?: number
+          conversation_id?: string | null
+          cost_usd?: number
+          created_at?: string
+          endpoint: string
+          error?: string | null
+          id?: string
+          latency_ms?: number
+          model?: string
+          prompt_tokens?: number
+          status?: string
+          total_tokens?: number
+          user_id: string
+        }
+        Update: {
+          completion_tokens?: number
+          conversation_id?: string | null
+          cost_usd?: number
+          created_at?: string
+          endpoint?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number
+          model?: string
+          prompt_tokens?: number
+          status?: string
+          total_tokens?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

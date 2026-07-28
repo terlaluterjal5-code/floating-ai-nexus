@@ -173,6 +173,7 @@ function ChatPage() {
             setStreamText(acc);
           },
           controller.signal,
+          conversation.id,
         );
       } catch (e) {
         if ((e as Error).name !== "AbortError") {

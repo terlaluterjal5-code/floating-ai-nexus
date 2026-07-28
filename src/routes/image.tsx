@@ -47,14 +47,23 @@ function ImagePage() {
     }
     setLoading(true);
     try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("You must be signed in.");
       const res = await fetch("/api/generate-image", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ prompt: p }),
       });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || `Failed (${res.status})`);
+        try {
+          const j = JSON.parse(text) as { error?: { message?: string } };
+          throw new Error(j.error?.message || text || `Failed (${res.status})`);
+        } catch {
+          throw new Error(text || `Failed (${res.status})`);
+        }
       }
       const { dataUrl } = (await res.json()) as { dataUrl: string };
       addImage({ id: cryptoRandom(), prompt: p, dataUrl, createdAt: Date.now() });

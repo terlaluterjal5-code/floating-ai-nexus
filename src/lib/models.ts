@@ -7,7 +7,7 @@ export const MODES: Record<
   basic: {
     label: "Basic",
     short: "Fast",
-    model: "google/gemini-3.1-flash-lite",
+    model: "gemini-2.5-flash",
     cost: 1,
     desc: "Fast simple answers for everyday questions.",
     system:
@@ -16,7 +16,7 @@ export const MODES: Record<
   standard: {
     label: "Standard",
     short: "Balanced",
-    model: "openai/gpt-5",
+    model: "gemini-2.5-pro",
     cost: 3,
     desc: "Balanced, well reasoned answers with detail.",
     system:
@@ -25,7 +25,7 @@ export const MODES: Record<
   deep: {
     label: "Deep Research",
     short: "Deep",
-    model: "openai/gpt-5",
+    model: "gemini-2.5-pro",
     cost: 8,
     desc: "Comprehensive research-grade analysis with structured reports.",
     system:
@@ -33,7 +33,7 @@ export const MODES: Record<
   },
 };
 
-export const IMAGE_MODEL = "google/gemini-3-pro-image";
+export const IMAGE_MODEL = "gemini-2.5-flash-image-preview";
 export const IMAGE_PROMPT_PREFIX =
   "Ultra super realistic, indistinguishable-from-reality photograph. Shot on Phase One IQ4 150MP medium-format camera with an 80mm f/1.4 prime lens, natural cinematic lighting, physically accurate global illumination, true-to-life color science, razor-sharp focus with realistic depth of field, natural film grain, lifelike skin texture with visible pores and subsurface scattering when applicable, hyper-detailed micro-textures, 8K resolution, RAW photo, no CGI look, no illustration, no painterly style. Subject:";
 export const IMAGE_COST = 10;
