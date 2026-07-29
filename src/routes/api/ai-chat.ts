@@ -16,14 +16,16 @@ function jsonError(status: number, code: string, message: string) {
 
 function writeUserFacingError(
   write: (obj: unknown) => void,
-  code: GeminiStreamError["code"],
+  err: GeminiStreamError,
 ) {
+  const detail = (err.message || "").slice(0, 300).replace(/\s+/g, " ").trim();
+  const suffix = detail ? ` (upstream ${err.status || ""}: ${detail})` : "";
   const msg =
-    code === "invalid_api_key" ? "\n\n_AI service is not properly configured. Please contact support._"
-    : code === "rate_limited" ? "\n\n_The AI is temporarily rate limited. Please try again in a moment._"
-    : code === "quota_exceeded" ? "\n\n_AI quota exceeded. Please try again later._"
-    : code === "timeout" ? "\n\n_The AI took too long to respond. Please try again._"
-    : code === "aborted" ? "" : "\n\n_The AI encountered an error. Please try again._";
+    err.code === "invalid_api_key" ? `\n\n_AI service is not properly configured — the Gemini API key is invalid or missing permissions.${suffix}_`
+    : err.code === "rate_limited" ? `\n\n_Gemini rate-limited this request.${suffix}_`
+    : err.code === "quota_exceeded" ? `\n\n_Gemini daily/free-tier quota exceeded on this API key. Enable billing on the Google AI project to continue.${suffix}_`
+    : err.code === "timeout" ? `\n\n_The AI took too long to respond. Please try again.${suffix}_`
+    : err.code === "aborted" ? "" : `\n\n_The AI encountered an error.${suffix}_`;
   if (msg) write({ choices: [{ delta: { content: msg } }] });
 }
 
@@ -121,12 +123,12 @@ export const Route = createFileRoute("/api/ai-chat")({
                   status = ge2.code === "aborted" ? "aborted" : "error";
                   errMsg = ge2.message || "Streaming failed";
                   console.error(`[ai-chat] rid=${reqId} FALLBACK failed code=${ge2.code} status=${ge2.status} message=${ge2.message}`);
-                  writeUserFacingError(write, ge2.code);
+                  writeUserFacingError(write, ge2);
                 }
               } else {
                 status = ge.code === "aborted" ? "aborted" : "error";
                 errMsg = ge.message || "Streaming failed";
-                writeUserFacingError(write, ge.code);
+                writeUserFacingError(write, ge);
               }
             }
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
