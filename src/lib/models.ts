@@ -7,7 +7,7 @@ export const MODES: Record<
   basic: {
     label: "Basic",
     short: "Fast",
-    model: "gemini-2.5-flash",
+    model: "gemini-flash-latest",
     cost: 1,
     desc: "Fast simple answers for everyday questions.",
     system:
@@ -16,7 +16,7 @@ export const MODES: Record<
   standard: {
     label: "Standard",
     short: "Balanced",
-    model: "gemini-2.5-pro",
+    model: "gemini-flash-latest",
     cost: 3,
     desc: "Balanced, well reasoned answers with detail.",
     system:
@@ -25,7 +25,7 @@ export const MODES: Record<
   deep: {
     label: "Deep Research",
     short: "Deep",
-    model: "gemini-2.5-pro",
+    model: "gemini-pro-latest",
     cost: 8,
     desc: "Comprehensive research-grade analysis with structured reports.",
     system:
