@@ -19,6 +19,7 @@ export const Route = createFileRoute("/api/ai-chat")({
     handlers: {
       POST: async ({ request }) => {
         const started = Date.now();
+        const reqId = Math.random().toString(36).slice(2, 10);
         const authHeader = request.headers.get("authorization") ?? "";
         if (!authHeader.startsWith("Bearer ")) return jsonError(401, "unauthorized", "Missing bearer token");
         const token = authHeader.slice(7);
@@ -53,8 +54,9 @@ export const Route = createFileRoute("/api/ai-chat")({
 
         const rl = await checkRateLimit(supabase, userId, "/api/ai-chat");
         if (!rl.ok) {
+          console.warn(`[ai-chat] rid=${reqId} user=${userId} SERVER rate limit hit scope=${rl.scope}`);
           return new Response(
-            JSON.stringify({ error: { code: "rate_limited", message: `Rate limit exceeded (${rl.scope}). Try again in ${rl.retryAfterSec}s.` } }),
+            JSON.stringify({ error: { code: "server_rate_limited", message: `You're sending messages too fast (${rl.scope} limit). Try again in ${rl.retryAfterSec}s.` } }),
             { status: 429, headers: { "Content-Type": "application/json", "Retry-After": String(rl.retryAfterSec) } },
           );
         }
@@ -64,6 +66,7 @@ export const Route = createFileRoute("/api/ai-chat")({
           conversationId ? loadConversationSummary(supabase, conversationId) : Promise.resolve<string | null>(null),
         ]);
         const cfg = MODES[mode];
+        console.log(`[ai-chat] rid=${reqId} user=${userId} mode=${mode} model=${cfg.model} msgs=${messages.length} conv=${conversationId ?? "-"}`);
         const systemBlocks: string[] = [cfg.system];
         if (summary) systemBlocks.push(`Prior conversation summary:\n${summary}`);
         if (memories.length) systemBlocks.push(`Long-term memory about the user (use only if relevant, do not mention that you have memory):\n- ${memories.join("\n- ")}`);
@@ -77,6 +80,7 @@ export const Route = createFileRoute("/api/ai-chat")({
             let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0 };
             let status: "ok" | "error" | "aborted" = "ok";
             let errMsg: string | null = null;
+            let usedModel = cfg.model;
             try {
               const result = await streamGemini({
                 model: cfg.model, system, messages, apiKey: GEMINI_API_KEY, clientSignal: request.signal,
@@ -85,23 +89,39 @@ export const Route = createFileRoute("/api/ai-chat")({
               usage = { promptTokens: result.promptTokens, completionTokens: result.completionTokens, totalTokens: result.totalTokens, latencyMs: result.latencyMs };
             } catch (e) {
               const ge = e as GeminiStreamError;
-              status = ge.code === "aborted" ? "aborted" : "error";
-              errMsg = ge.message || "Streaming failed";
-              console.error("[ai-chat] gemini error", ge.code, ge.status, ge.message);
-              const userMsg =
-                ge.code === "invalid_api_key" ? "\n\n_AI service is not properly configured. Please contact support._"
-                : ge.code === "rate_limited" ? "\n\n_The AI is temporarily rate limited. Please try again in a moment._"
-                : ge.code === "quota_exceeded" ? "\n\n_AI quota exceeded. Please try again later._"
-                : ge.code === "timeout" ? "\n\n_The AI took too long to respond. Please try again._"
-                : ge.code === "aborted" ? "" : "\n\n_The AI encountered an error. Please try again._";
-              if (userMsg) write({ choices: [{ delta: { content: userMsg } }] });
+              console.error(`[ai-chat] rid=${reqId} UPSTREAM gemini error model=${cfg.model} code=${ge.code} status=${ge.status} message=${ge.message}`);
+              // Fallback: if pro rate-limited/quota, retry with flash so the user still gets an answer.
+              const shouldFallback = (ge.code === "rate_limited" || ge.code === "quota_exceeded" || ge.code === "upstream") && cfg.model !== "gemini-2.5-flash";
+              if (shouldFallback && !request.signal.aborted && fullText.length === 0) {
+                try {
+                  console.log(`[ai-chat] rid=${reqId} FALLBACK model=gemini-2.5-flash`);
+                  const result = await streamGemini({
+                    model: "gemini-2.5-flash", system, messages, apiKey: GEMINI_API_KEY, clientSignal: request.signal,
+                    writeDelta: (t) => { fullText += t; write({ choices: [{ delta: { content: t } }] }); },
+                  });
+                  usage = { promptTokens: result.promptTokens, completionTokens: result.completionTokens, totalTokens: result.totalTokens, latencyMs: result.latencyMs };
+                  usedModel = "gemini-2.5-flash";
+                  status = "ok";
+                } catch (e2) {
+                  const ge2 = e2 as GeminiStreamError;
+                  status = ge2.code === "aborted" ? "aborted" : "error";
+                  errMsg = ge2.message || "Streaming failed";
+                  console.error(`[ai-chat] rid=${reqId} FALLBACK failed code=${ge2.code} status=${ge2.status} message=${ge2.message}`);
+                  writeUserFacingError(write, ge2.code);
+                }
+              } else {
+                status = ge.code === "aborted" ? "aborted" : "error";
+                errMsg = ge.message || "Streaming failed";
+                writeUserFacingError(write, ge.code);
+              }
             }
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
 
-            const cost = estimateCostUsd(cfg.model, usage.promptTokens, usage.completionTokens);
+            const cost = estimateCostUsd(usedModel, usage.promptTokens, usage.completionTokens);
+            console.log(`[ai-chat] rid=${reqId} done model=${usedModel} status=${status} tokens=${usage.totalTokens} latencyMs=${usage.latencyMs || Date.now() - started} cost=$${cost.toFixed(6)}`);
             await recordUsage(supabase, {
-              userId, conversationId: conversationId ?? null, endpoint: "/api/ai-chat", model: cfg.model,
+              userId, conversationId: conversationId ?? null, endpoint: "/api/ai-chat", model: usedModel,
               promptTokens: usage.promptTokens, completionTokens: usage.completionTokens, totalTokens: usage.totalTokens,
               latencyMs: usage.latencyMs || Date.now() - started, costUsd: cost, status, error: errMsg,
             });
