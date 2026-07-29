@@ -104,16 +104,17 @@ export const Route = createFileRoute("/api/ai-chat")({
               const ge = e as GeminiStreamError;
               console.error(`[ai-chat] rid=${reqId} UPSTREAM gemini error model=${cfg.model} code=${ge.code} status=${ge.status} message=${ge.message}`);
               // Fallback: if pro rate-limited/quota, retry with flash so the user still gets an answer.
-              const shouldFallback = (ge.code === "rate_limited" || ge.code === "quota_exceeded" || ge.code === "upstream") && cfg.model !== "gemini-2.5-flash";
+              const FALLBACK_MODEL = "gemini-flash-latest";
+              const shouldFallback = (ge.code === "rate_limited" || ge.code === "quota_exceeded" || ge.code === "upstream") && cfg.model !== FALLBACK_MODEL;
               if (shouldFallback && !request.signal.aborted && fullText.length === 0) {
                 try {
-                  console.log(`[ai-chat] rid=${reqId} FALLBACK model=gemini-2.5-flash`);
+                  console.log(`[ai-chat] rid=${reqId} FALLBACK model=${FALLBACK_MODEL}`);
                   const result = await streamGemini({
-                    model: "gemini-2.5-flash", system, messages, apiKey: GEMINI_API_KEY, clientSignal: request.signal,
+                    model: FALLBACK_MODEL, system, messages, apiKey: GEMINI_API_KEY, clientSignal: request.signal,
                     writeDelta: (t) => { fullText += t; write({ choices: [{ delta: { content: t } }] }); },
                   });
                   usage = { promptTokens: result.promptTokens, completionTokens: result.completionTokens, totalTokens: result.totalTokens, latencyMs: result.latencyMs };
-                  usedModel = "gemini-2.5-flash";
+                  usedModel = FALLBACK_MODEL;
                   status = "ok";
                 } catch (e2) {
                   const ge2 = e2 as GeminiStreamError;
