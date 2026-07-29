@@ -14,6 +14,19 @@ function jsonError(status: number, code: string, message: string) {
   return new Response(JSON.stringify({ error: { code, message } }), { status, headers: { "Content-Type": "application/json" } });
 }
 
+function writeUserFacingError(
+  write: (obj: unknown) => void,
+  code: GeminiStreamError["code"],
+) {
+  const msg =
+    code === "invalid_api_key" ? "\n\n_AI service is not properly configured. Please contact support._"
+    : code === "rate_limited" ? "\n\n_The AI is temporarily rate limited. Please try again in a moment._"
+    : code === "quota_exceeded" ? "\n\n_AI quota exceeded. Please try again later._"
+    : code === "timeout" ? "\n\n_The AI took too long to respond. Please try again._"
+    : code === "aborted" ? "" : "\n\n_The AI encountered an error. Please try again._";
+  if (msg) write({ choices: [{ delta: { content: msg } }] });
+}
+
 export const Route = createFileRoute("/api/ai-chat")({
   server: {
     handlers: {
