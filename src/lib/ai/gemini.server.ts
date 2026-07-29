@@ -74,6 +74,19 @@ function classifyStatus(status: number): GeminiStreamError["code"] {
   return "upstream";
 }
 
+function parseRetryAfter(h: string | null): number | null {
+  if (!h) return null;
+  const s = Number(h);
+  if (Number.isFinite(s)) return Math.max(0, s * 1000);
+  const d = Date.parse(h);
+  if (!Number.isNaN(d)) return Math.max(0, d - Date.now());
+  return null;
+}
+
+function rid() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
 /**
  * Stream a Gemini response as OpenAI-compatible SSE deltas so the existing
  * client parser works unchanged. Emits `data: {choices:[{delta:{content:"..."}}]}\n\n`.
@@ -87,6 +100,7 @@ export async function streamGemini(opts: {
   clientSignal?: AbortSignal;
 }): Promise<GeminiStreamResult> {
   const start = Date.now();
+  const reqId = rid();
   const body = {
     contents: toGeminiMessages(opts.messages),
     systemInstruction: opts.system ? { role: "system", parts: [{ text: opts.system }] } : undefined,
@@ -114,6 +128,7 @@ export async function streamGemini(opts: {
     const onClientAbort = () => controller.abort();
     opts.clientSignal?.addEventListener("abort", onClientAbort);
     try {
+      const attemptStart = Date.now();
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,15 +138,21 @@ export async function streamGemini(opts: {
       if (!res.ok || !res.body) {
         const text = await res.text().catch(() => "");
         lastErr = { status: res.status, code: classifyStatus(res.status), message: text || res.statusText };
+        const retryAfterMs = parseRetryAfter(res.headers.get("retry-after"));
+        console.error(
+          `[gemini] rid=${reqId} model=${opts.model} attempt=${attempt}/${MAX_RETRIES} status=${res.status} latencyMs=${Date.now() - attemptStart} retryAfter=${retryAfterMs ?? "n/a"} body=${(text || "").slice(0, 500)}`,
+        );
         clearTimeout(timeout);
         opts.clientSignal?.removeEventListener("abort", onClientAbort);
-        // Retry only on 429 / 5xx
-        if (res.status === 429 || res.status >= 500) {
-          await sleep(Math.min(8000, 400 * 2 ** (attempt - 1)) + Math.random() * 200);
+        // Retry only on 429 / 5xx (respect Retry-After)
+        if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
+          const backoff = retryAfterMs ?? Math.min(8000, 400 * 2 ** (attempt - 1));
+          await sleep(backoff + Math.random() * 250);
           continue;
         }
         throw lastErr;
       }
+      console.log(`[gemini] rid=${reqId} model=${opts.model} attempt=${attempt} status=200 streaming`);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -202,6 +223,7 @@ export async function streamGemini(opts: {
       } else {
         lastErr = { status: 0, code: "network", message: err?.message || "Network error" };
       }
+      console.error(`[gemini] rid=${reqId} model=${opts.model} attempt=${attempt}/${MAX_RETRIES} caught code=${lastErr?.code} message=${lastErr?.message}`);
       if (attempt >= MAX_RETRIES) break;
       await sleep(Math.min(8000, 400 * 2 ** (attempt - 1)) + Math.random() * 200);
     }
