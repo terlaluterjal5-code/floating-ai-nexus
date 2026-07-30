@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 import { Route as ApiUsageWorkerRouteImport } from './routes/api/usage-worker'
+import { Route as ApiSubscriptionCheckRouteImport } from './routes/api/subscription-check'
 import { Route as ApiMemoryWorkerRouteImport } from './routes/api/memory-worker'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
@@ -73,6 +74,11 @@ const ApiUsageWorkerRoute = ApiUsageWorkerRouteImport.update({
   path: '/api/usage-worker',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSubscriptionCheckRoute = ApiSubscriptionCheckRouteImport.update({
+  id: '/api/subscription-check',
+  path: '/api/subscription-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMemoryWorkerRoute = ApiMemoryWorkerRouteImport.update({
   id: '/api/memory-worker',
   path: '/api/memory-worker',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
+  '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
+  '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat': typeof ChatIndexRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
+  '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/api/ai-chat'
     | '/api/generate-image'
     | '/api/memory-worker'
+    | '/api/subscription-check'
     | '/api/usage-worker'
     | '/chat/$threadId'
     | '/chat/'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/api/ai-chat'
     | '/api/generate-image'
     | '/api/memory-worker'
+    | '/api/subscription-check'
     | '/api/usage-worker'
     | '/chat/$threadId'
     | '/chat'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/api/ai-chat'
     | '/api/generate-image'
     | '/api/memory-worker'
+    | '/api/subscription-check'
     | '/api/usage-worker'
     | '/chat/$threadId'
     | '/chat/'
@@ -194,6 +206,7 @@ export interface RootRouteChildren {
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ApiMemoryWorkerRoute: typeof ApiMemoryWorkerRoute
+  ApiSubscriptionCheckRoute: typeof ApiSubscriptionCheckRoute
   ApiUsageWorkerRoute: typeof ApiUsageWorkerRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
   ChatIndexRoute: typeof ChatIndexRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsageWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/subscription-check': {
+      id: '/api/subscription-check'
+      path: '/api/subscription-check'
+      fullPath: '/api/subscription-check'
+      preLoaderRoute: typeof ApiSubscriptionCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/memory-worker': {
       id: '/api/memory-worker'
       path: '/api/memory-worker'
@@ -306,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAiChatRoute: ApiAiChatRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ApiMemoryWorkerRoute: ApiMemoryWorkerRoute,
+  ApiSubscriptionCheckRoute: ApiSubscriptionCheckRoute,
   ApiUsageWorkerRoute: ApiUsageWorkerRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
   ChatIndexRoute: ChatIndexRoute,
@@ -313,13 +334,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
