@@ -2,10 +2,25 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-type FeatureValue = string | number | boolean | null;
-
 const CACHE_SECONDS = 300;
 const FREE_PLAN_CODE = "free";
+const ACTIVE_STATUSES = ["active", "trialing", "past_due"] as const;
+
+/** Canonical feature flags. Every response contains all of them. */
+export const FEATURE_KEYS = [
+  "unlimited_deep_research",
+  "higher_ai_intelligence",
+  "faster_response_speed",
+  "advanced_image_generation",
+  "larger_pdf_analysis",
+  "priority_processing",
+  "exclusive_futuristic_ai_tools",
+  "professional_research_assistant",
+  "unlimited_chat_credits",
+  "advanced_data_analysis",
+] as const;
+
+export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
 function isNewKey(v: string) {
   return v.startsWith("sb_publishable_") || v.startsWith("sb_secret_");
@@ -43,15 +58,15 @@ function createUserClient(url: string, key: string, token: string): SupabaseClie
   });
 }
 
-function featureValue(row: {
+function truthy(row: {
   value_bool: boolean | null;
   value_number: number | null;
   value_text: string | null;
-}): FeatureValue {
+}): boolean {
   if (row.value_bool !== null) return row.value_bool;
-  if (row.value_number !== null) return Number(row.value_number);
-  if (row.value_text !== null) return row.value_text;
-  return null;
+  if (row.value_number !== null) return Number(row.value_number) > 0;
+  if (row.value_text !== null) return !["", "false", "0", "none", "off"].includes(row.value_text.toLowerCase());
+  return false;
 }
 
 export const Route = createFileRoute("/api/subscription-check")({
