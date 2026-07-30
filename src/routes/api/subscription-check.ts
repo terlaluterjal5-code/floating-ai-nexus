@@ -112,8 +112,10 @@ export const Route = createFileRoute("/api/subscription-check")({
           if (subError) throw Object.assign(new Error(subError.message), { step });
 
           step = "resolve_plan";
-          let planId = sub?.plan_id ?? null;
-          let status = sub?.status ?? "active";
+          const hasActiveSub =
+            !!sub && (ACTIVE_STATUSES as readonly string[]).includes(sub.status);
+          let planId = hasActiveSub ? sub!.plan_id : null;
+          let status = hasActiveSub ? sub!.status : "active";
           let periodEnd = sub?.current_period_end ?? null;
           let cancelAtPeriodEnd = sub?.cancel_at_period_end ?? false;
           let assigned = false;
@@ -130,19 +132,21 @@ export const Route = createFileRoute("/api/subscription-check")({
               return jsonError(404, "plan_not_found", "No subscription plan is configured.", reqId);
             }
 
-            step = "assign_free_plan";
-            const { error: insertError } = await supabase
-              .from("user_subscriptions")
-              .insert({ user_id: userId, plan_id: freePlan.id, status: "active" });
-            // Ignore unique-violation races: another concurrent request created it.
-            if (insertError && insertError.code !== "23505") {
-              throw Object.assign(new Error(insertError.message), { step });
+            if (!sub) {
+              step = "assign_free_plan";
+              const { error: insertError } = await supabase
+                .from("user_subscriptions")
+                .insert({ user_id: userId, plan_id: freePlan.id, status: "active" });
+              // Ignore unique-violation races: another concurrent request created it.
+              if (insertError && insertError.code !== "23505") {
+                throw Object.assign(new Error(insertError.message), { step });
+              }
+              assigned = true;
             }
             planId = freePlan.id;
             status = "active";
             periodEnd = null;
             cancelAtPeriodEnd = false;
-            assigned = true;
           }
 
           step = "load_plan_features";
@@ -159,10 +163,14 @@ export const Route = createFileRoute("/api/subscription-check")({
             return jsonError(404, "plan_not_found", "The subscribed plan no longer exists.", reqId);
           }
 
-          const features: Record<string, FeatureValue> = {};
+          const features = Object.fromEntries(
+            FEATURE_KEYS.map((k) => [k, false]),
+          ) as Record<FeatureKey, boolean>;
           const featureLabels: Record<string, string> = {};
           for (const f of plan.plan_features ?? []) {
-            features[f.feature_key] = featureValue(f);
+            if ((FEATURE_KEYS as readonly string[]).includes(f.feature_key)) {
+              features[f.feature_key as FeatureKey] = truthy(f);
+            }
             if (f.label) featureLabels[f.feature_key] = f.label;
           }
 
