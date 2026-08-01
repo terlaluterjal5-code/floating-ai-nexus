@@ -8,7 +8,7 @@ import { ModeSelector } from "@/components/ModeSelector";
 import { useSession } from "@/lib/auth";
 import { isPremium, spendCredits, useHydrated } from "@/lib/storage";
 import { MODES, type ChatMode } from "@/lib/models";
-import { streamChat, type SendMessage } from "@/lib/streamChat";
+import { streamChat, type ChatRequestType, type SendMessage } from "@/lib/streamChat";
 import {
   createConversation,
   deleteConversation,
@@ -164,8 +164,15 @@ function ChatPage() {
       });
 
       let acc = "";
+      let savedId: string | undefined;
+      let savedAt: string | undefined;
+      const requestType: ChatRequestType = atts.some((a) => a.mime === "application/pdf")
+        ? "pdf_analysis"
+        : mode === "deep"
+          ? "deep_research"
+          : "chat";
       try {
-        await streamChat(
+        const result = await streamChat(
           wire,
           mode,
           (delta) => {
@@ -174,7 +181,10 @@ function ChatPage() {
           },
           controller.signal,
           conversation.id,
+          requestType,
         );
+        savedId = result.messageId;
+        savedAt = result.createdAt;
       } catch (e) {
         if ((e as Error).name !== "AbortError") {
           toast.error((e as Error).message || "Streaming failed");
@@ -184,15 +194,28 @@ function ChatPage() {
       }
 
       try {
-        const assistantMsg = await insertMessage(
-          user.id,
-          conversation.id,
-          "assistant",
-          acc,
-          [],
-        );
-        setMessages((prev) => [...prev, assistantMsg]);
-        touchConversation(conversation.id).catch(() => {});
+        if (!acc.trim()) {
+          // Nothing streamed (denied / failed) — keep the transcript unchanged.
+        } else if (savedId) {
+          // The server already persisted this assistant message.
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: savedId,
+              conversation_id: conversation.id,
+              user_id: user.id,
+              role: "assistant",
+              content: acc,
+              attachments: [],
+              created_at: savedAt ?? new Date().toISOString(),
+            } as Message,
+          ]);
+          touchConversation(conversation.id).catch(() => {});
+        } else {
+          const assistantMsg = await insertMessage(user.id, conversation.id, "assistant", acc, []);
+          setMessages((prev) => [...prev, assistantMsg]);
+          touchConversation(conversation.id).catch(() => {});
+        }
       } catch (e) {
         toast.error((e as Error).message || "Failed to save reply");
       } finally {
