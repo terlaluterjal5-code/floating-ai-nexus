@@ -60,7 +60,9 @@ function PdfPage() {
       return;
     }
     try {
-      const conv = await createConversation(user.id, "deep", `PDF · ${file.name.slice(0, 40)}`);
+      // Standard mode by default: Deep Research requires the plan feature and is
+      // enforced server-side, so free users would otherwise be blocked here.
+      const conv = await createConversation(user.id, "standard", `PDF · ${file.name.slice(0, 40)}`);
       sessionStorage.setItem(
         `fs.pending.${conv.id}`,
         JSON.stringify({ prompt, attachments: [file] }),
