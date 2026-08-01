@@ -1,26 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { FEATURE_KEYS, type FeatureKey } from "@/lib/ai/features";
 
 const CACHE_SECONDS = 300;
 const FREE_PLAN_CODE = "free";
 const ACTIVE_STATUSES = ["active", "trialing", "past_due"] as const;
 
-/** Canonical feature flags. Every response contains all of them. */
-export const FEATURE_KEYS = [
-  "unlimited_deep_research",
-  "higher_ai_intelligence",
-  "faster_response_speed",
-  "advanced_image_generation",
-  "larger_pdf_analysis",
-  "priority_processing",
-  "exclusive_futuristic_ai_tools",
-  "professional_research_assistant",
-  "unlimited_chat_credits",
-  "advanced_data_analysis",
-] as const;
-
-export type FeatureKey = (typeof FEATURE_KEYS)[number];
+export { FEATURE_KEYS, type FeatureKey };
 
 function isNewKey(v: string) {
   return v.startsWith("sb_publishable_") || v.startsWith("sb_secret_");
