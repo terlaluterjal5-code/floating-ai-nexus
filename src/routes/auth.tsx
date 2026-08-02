@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { BrandLogo } from "@/components/BrandLogo";
-import { lovable } from "@/integrations/lovable";
 import { useSession } from "@/lib/auth";
+import { startGoogleSignIn, rememberRedirect } from "@/lib/oauth";
 import { Sparkles, Crown, Telescope } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
@@ -29,9 +29,8 @@ function AuthPage() {
   async function google() {
     setBusy(true);
     try {
-      const res = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
+      rememberRedirect("/profile");
+      const res = await startGoogleSignIn();
       if (res.error) {
         toast.error(res.error.message ?? "Sign-in failed");
         setBusy(false);

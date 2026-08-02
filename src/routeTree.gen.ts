@@ -18,6 +18,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiUsageWorkerRouteImport } from './routes/api/usage-worker'
 import { Route as ApiSubscriptionCheckRouteImport } from './routes/api/subscription-check'
 import { Route as ApiMemoryWorkerRouteImport } from './routes/api/memory-worker'
@@ -69,6 +70,11 @@ const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
   path: '/chat/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
 const ApiUsageWorkerRoute = ApiUsageWorkerRouteImport.update({
   id: '/api/usage-worker',
   path: '/api/usage-worker',
@@ -97,7 +103,7 @@ const ApiAiChatRoute = ApiAiChatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/history': typeof HistoryRoute
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
@@ -108,12 +114,13 @@ export interface FileRoutesByFullPath {
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
   '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/history': typeof HistoryRoute
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
@@ -124,13 +131,14 @@ export interface FileRoutesByTo {
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
   '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat': typeof ChatIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/history': typeof HistoryRoute
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
   '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
 }
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/api/memory-worker'
     | '/api/subscription-check'
     | '/api/usage-worker'
+    | '/auth/callback'
     | '/chat/$threadId'
     | '/chat/'
   fileRoutesByTo: FileRoutesByTo
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/api/memory-worker'
     | '/api/subscription-check'
     | '/api/usage-worker'
+    | '/auth/callback'
     | '/chat/$threadId'
     | '/chat'
   id:
@@ -191,13 +202,14 @@ export interface FileRouteTypes {
     | '/api/memory-worker'
     | '/api/subscription-check'
     | '/api/usage-worker'
+    | '/auth/callback'
     | '/chat/$threadId'
     | '/chat/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   HistoryRoute: typeof HistoryRoute
   ImageRoute: typeof ImageRoute
   PdfRoute: typeof PdfRoute
@@ -277,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/api/usage-worker': {
       id: '/api/usage-worker'
       path: '/api/usage-worker'
@@ -315,9 +334,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   HistoryRoute: HistoryRoute,
   ImageRoute: ImageRoute,
   PdfRoute: PdfRoute,
