@@ -41,6 +41,7 @@ function startAuthState() {
   // Subscribe before reading storage so SIGNED_IN cannot be missed between the two.
   supabase.auth.onAuthStateChange((event, session) => {
     if (event !== "INITIAL_SESSION" && event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "TOKEN_REFRESHED" && event !== "USER_UPDATED") return;
+    if (event === "INITIAL_SESSION" && !session && authSnapshot.session) return;
     authRevision += 1;
     publishAuth(session, false);
   });
