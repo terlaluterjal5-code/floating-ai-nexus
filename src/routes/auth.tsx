@@ -23,13 +23,13 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/profile" });
+    if (!loading && user) navigate({ to: "/chat", replace: true });
   }, [loading, user, navigate]);
 
   async function google() {
     setBusy(true);
     try {
-      rememberRedirect("/profile");
+      rememberRedirect("/chat");
       const res = await startGoogleSignIn();
       if (res.error) {
         toast.error(res.error.message ?? "Sign-in failed");
@@ -38,7 +38,7 @@ function AuthPage() {
       }
       if (res.redirected) return;
       toast.success("Signed in — enjoy your 2-day Premium trial!");
-      navigate({ to: "/profile" });
+      navigate({ to: "/chat", replace: true });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign-in failed");
       setBusy(false);

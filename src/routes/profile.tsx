@@ -57,9 +57,16 @@ function ProfilePage() {
   const avatar = profile?.avatar_url || (user?.user_metadata?.avatar_url as string | undefined);
 
   async function handleSignOut() {
-    await signOut();
-    toast.success("Signed out");
-    navigate({ to: "/" });
+    try {
+      await signOut();
+      toast.success("Signed out");
+      navigate({ to: "/auth", replace: true });
+    } catch (error) {
+      console.error("[auth] Sign-out failed", {
+        message: error instanceof Error ? error.message : "Unknown sign-out error",
+      });
+      toast.error("Could not sign out. Please try again.");
+    }
   }
 
   return (
