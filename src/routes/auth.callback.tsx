@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { BrandLogo } from "@/components/BrandLogo";
 import { supabase } from "@/integrations/supabase/client";
-import { takeRedirect } from "@/lib/oauth";
+import { configureSharedAuthForPkce, takeRedirect } from "@/lib/oauth";
 
 export const Route = createFileRoute("/auth/callback")({
   // Session lives in localStorage; this page is browser-only by nature.
@@ -21,12 +21,28 @@ export const Route = createFileRoute("/auth/callback")({
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const [message, setMessage] = useState("Completing sign-in…");
+  const callbackUrlRef = useRef<URL | null>(null);
+
+  // Preserve the callback parameters, then remove them before the shared auth
+  // client initializes. This makes the explicit exchange below the sole
+  // consumer of the one-time PKCE code.
+  if (!callbackUrlRef.current) {
+    callbackUrlRef.current = new URL(window.location.href);
+    window.history.replaceState({}, "", window.location.pathname);
+    configureSharedAuthForPkce();
+  }
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const url = new URL(window.location.href);
+      const url = callbackUrlRef.current;
+      if (!url) {
+        console.error("[auth.callback] Callback URL could not be initialized");
+        toast.error("Sign-in could not be completed. Please try again.");
+        navigate({ to: "/auth", replace: true });
+        return;
+      }
       const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
       const errorDescription =
         url.searchParams.get("error_description") ?? hash.get("error_description");
@@ -105,9 +121,6 @@ function AuthCallbackPage() {
       }
       authSubscription.subscription.unsubscribe();
       if (cancelled) return;
-
-      // Clean the tokens/code out of the URL before moving on.
-      window.history.replaceState({}, "", window.location.pathname);
 
       if (!session) {
         console.error("[auth.callback] No persisted session was available after OAuth completion", {

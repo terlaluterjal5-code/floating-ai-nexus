@@ -1,6 +1,20 @@
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
+type PkceCapableAuthClient = typeof supabase.auth & { flowType: "pkce" | "implicit" };
+
+/**
+ * The generated singleton defaults to implicit flow, while the custom-domain
+ * callback exchanges an authorization code. Configure that same singleton for
+ * PKCE before either sign-in or callback initialization; do not create another
+ * client with separate storage.
+ */
+export function configureSharedAuthForPkce() {
+  (supabase.auth as PkceCapableAuthClient).flowType = "pkce";
+}
+
+configureSharedAuthForPkce();
+
 /** Public, same-origin callback path. Must exist as a route in src/routes. */
 export const AUTH_CALLBACK_PATH = "/auth/callback";
 const REDIRECT_KEY = "fs:auth:redirect";
