@@ -71,7 +71,9 @@ function startAuthState() {
 function subscribeAuth(listener: () => void) {
   authListeners.add(listener);
   startAuthState();
-  return () => authListeners.delete(listener);
+  return () => {
+    authListeners.delete(listener);
+  };
 }
 
 export function useSession() {
