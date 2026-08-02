@@ -13,8 +13,6 @@ export function configureSharedAuthForPkce() {
   (supabase.auth as PkceCapableAuthClient).flowType = "pkce";
 }
 
-configureSharedAuthForPkce();
-
 /** Public, same-origin callback path. Must exist as a route in src/routes. */
 export const AUTH_CALLBACK_PATH = "/auth/callback";
 const REDIRECT_KEY = "fs:auth:redirect";
@@ -66,6 +64,7 @@ export async function startGoogleSignIn(): Promise<OAuthStart> {
     return { redirected: Boolean(res.redirected) };
   }
 
+  configureSharedAuthForPkce();
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo, queryParams: { prompt: "select_account" } },
