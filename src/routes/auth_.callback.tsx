@@ -4,9 +4,12 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { BrandLogo } from "@/components/BrandLogo";
 import { supabase } from "@/integrations/supabase/client";
+import { initializeAuth } from "@/lib/auth";
 import { configureSharedAuthForPkce, takeRedirect } from "@/lib/oauth";
 
-export const Route = createFileRoute("/auth/callback")({
+let callbackCompletion: { key: string; promise: Promise<void> } | null = null;
+
+export const Route = createFileRoute("/auth_/callback")({
   // Session lives in localStorage; this page is browser-only by nature.
   ssr: false,
   head: () => ({
@@ -23,24 +26,20 @@ function AuthCallbackPage() {
   const [message, setMessage] = useState("Completing sign-in…");
   const callbackUrlRef = useRef<URL | null>(null);
 
-  // Preserve the callback parameters, then remove them before the shared auth
-  // client initializes. This makes the explicit exchange below the sole
-  // consumer of the one-time PKCE code.
+  // Preserve callback parameters across renders. Keep the URL intact until a
+  // persisted session has been verified successfully.
   if (!callbackUrlRef.current) {
     callbackUrlRef.current = new URL(window.location.href);
-    window.history.replaceState({}, "", window.location.pathname);
     configureSharedAuthForPkce();
   }
 
   useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
+    const complete = async () => {
       const url = callbackUrlRef.current;
       if (!url) {
         console.error("[auth.callback] Callback URL could not be initialized");
         toast.error("Sign-in could not be completed. Please try again.");
-        navigate({ to: "/auth", replace: true });
+        setMessage("Sign-in could not be completed. Please return to sign in and try again.");
         return;
       }
       const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
@@ -53,25 +52,17 @@ function AuthCallbackPage() {
         });
         setMessage(errorDescription);
         toast.error(errorDescription);
-        navigate({ to: "/auth", replace: true });
         return;
       }
 
-      // Listen before exchanging so the SIGNED_IN event cannot be missed.
-      let eventSession = null as Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"];
-      const { data: authSubscription } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          eventSession = session;
-        }
-      });
-
-      // PKCE: exchange ?code= using the same singleton browser client used by the app.
+      // Initialize the one shared client, then exchange the PKCE code exactly
+      // once through that same instance.
+      await initializeAuth();
+      let session = (await supabase.auth.getSession()).data.session;
       const code = url.searchParams.get("code");
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (!session && code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
-          // detectSessionInUrl may have completed the same exchange first. Only fail
-          // after checking whether that automatic exchange persisted a session.
           const existing = (await supabase.auth.getSession()).data.session;
           if (!existing) {
             console.error("[auth.callback] PKCE exchange failed", {
@@ -79,13 +70,13 @@ function AuthCallbackPage() {
               message: error.message,
               status: error.status,
             });
-            authSubscription.subscription.unsubscribe();
             setMessage(error.message);
             toast.error("Sign-in could not be completed. Please try again.");
-            navigate({ to: "/auth", replace: true });
             return;
           }
-          eventSession = existing;
+          session = existing;
+        } else {
+          session = data.session;
         }
       }
 
@@ -100,45 +91,46 @@ function AuthCallbackPage() {
             message: error.message,
             status: error.status,
           });
-          authSubscription.subscription.unsubscribe();
           toast.error("Sign-in could not be completed. Please try again.");
-          navigate({ to: "/auth", replace: true });
+          setMessage("Sign-in could not be completed. Please return to sign in and try again.");
           return;
         }
-        eventSession = data.session;
+        session = data.session;
       }
 
-      if (!code && !access_token && !eventSession) {
+      if (!code && !access_token && !session) {
         console.warn("[auth.callback] Callback arrived without an authorization code or session tokens");
       }
 
-      // Confirm the session can be read back from the shared client's persistent
-      // storage before leaving this public callback route.
-      let session = eventSession ?? (await supabase.auth.getSession()).data.session;
+      // Confirm the session can be read back from persistent storage before
+      // clearing the callback URL or entering a protected route.
+      session = session ?? (await supabase.auth.getSession()).data.session;
       for (let i = 0; i < 30 && !session; i++) {
         await new Promise((resolve) => window.setTimeout(resolve, 100));
-        session = eventSession ?? (await supabase.auth.getSession()).data.session;
+        session = (await supabase.auth.getSession()).data.session;
       }
-      authSubscription.subscription.unsubscribe();
-      if (cancelled) return;
-
       if (!session) {
         console.error("[auth.callback] No persisted session was available after OAuth completion", {
           hadCode: Boolean(code),
           hadHashTokens: Boolean(access_token && refresh_token),
         });
         toast.error("Sign-in could not be completed. Please try again.");
-        navigate({ to: "/auth", replace: true });
+        setMessage("Sign-in could not be completed. Please return to sign in and try again.");
         return;
       }
 
+      window.history.replaceState({}, "", window.location.pathname);
       toast.success("Signed in — welcome back!");
       navigate({ to: takeRedirect("/chat"), replace: true });
-    })();
-
-    return () => {
-      cancelled = true;
     };
+
+    // React Strict Mode or a remount must never consume the same code twice,
+    // while a later login attempt with a new callback URL must still run.
+    const callbackKey = callbackUrlRef.current?.href ?? window.location.href;
+    if (!callbackCompletion || callbackCompletion.key !== callbackKey) {
+      callbackCompletion = { key: callbackKey, promise: complete() };
+    }
+    void callbackCompletion.promise;
   }, [navigate]);
 
   return (
