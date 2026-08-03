@@ -34,8 +34,6 @@ function AuthCallbackPage() {
   }
 
   useEffect(() => {
-    let cancelled = false;
-
     const complete = async () => {
       const url = callbackUrlRef.current;
       if (!url) {
@@ -111,8 +109,6 @@ function AuthCallbackPage() {
         await new Promise((resolve) => window.setTimeout(resolve, 100));
         session = (await supabase.auth.getSession()).data.session;
       }
-      if (cancelled) return;
-
       if (!session) {
         console.error("[auth.callback] No persisted session was available after OAuth completion", {
           hadCode: Boolean(code),
@@ -131,10 +127,6 @@ function AuthCallbackPage() {
     // React Strict Mode or a remount must never consume the same code twice.
     callbackCompletion ??= complete();
     void callbackCompletion;
-
-    return () => {
-      cancelled = true;
-    };
   }, [navigate]);
 
   return (
