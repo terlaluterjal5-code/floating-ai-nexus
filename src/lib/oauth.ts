@@ -1,7 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
-type PkceCapableAuthClient = typeof supabase.auth & { flowType: "pkce" | "implicit" };
+type PkceCapableAuthClient = typeof supabase.auth & {
+  flowType: "pkce" | "implicit";
+  detectSessionInUrl: boolean;
+};
 
 /**
  * The generated singleton defaults to implicit flow, while the custom-domain
@@ -10,7 +13,11 @@ type PkceCapableAuthClient = typeof supabase.auth & { flowType: "pkce" | "implic
  * client with separate storage.
  */
 export function configureSharedAuthForPkce() {
-  (supabase.auth as PkceCapableAuthClient).flowType = "pkce";
+  const auth = supabase.auth as PkceCapableAuthClient;
+  auth.flowType = "pkce";
+  // The callback route performs the exchange explicitly. Disabling automatic
+  // URL detection prevents the same one-time code being consumed twice.
+  auth.detectSessionInUrl = false;
 }
 
 /** Public, same-origin callback path. Must exist as a route in src/routes. */

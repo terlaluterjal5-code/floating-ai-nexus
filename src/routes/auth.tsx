@@ -27,6 +27,7 @@ function AuthPage() {
   }, [loading, user, navigate]);
 
   async function google() {
+    if (loading || busy) return;
     setBusy(true);
     try {
       rememberRedirect("/chat");
@@ -80,11 +81,11 @@ function AuthPage() {
 
         <button
           onClick={google}
-          disabled={busy}
+          disabled={loading || busy}
           className="relative mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-[14px] font-semibold text-black shadow-2xl shadow-primary/30 transition active:scale-[0.98] disabled:opacity-60"
         >
           <GoogleIcon />
-          {busy ? "Connecting…" : "Continue with Google"}
+          {loading ? "Checking session…" : busy ? "Connecting…" : "Continue with Google"}
         </button>
 
         <p className="relative mt-4 text-center text-[11px] text-muted-foreground">
