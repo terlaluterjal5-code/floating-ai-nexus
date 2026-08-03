@@ -9,7 +9,7 @@ import { configureSharedAuthForPkce, takeRedirect } from "@/lib/oauth";
 
 let callbackCompletion: { key: string; promise: Promise<void> } | null = null;
 
-export const Route = createFileRoute("/auth/callback")({
+export const Route = createFileRoute("/auth_/callback")({
   // Session lives in localStorage; this page is browser-only by nature.
   ssr: false,
   head: () => ({
