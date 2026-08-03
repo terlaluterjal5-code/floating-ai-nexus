@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { initializeAuth } from "@/lib/auth";
 import { configureSharedAuthForPkce, takeRedirect } from "@/lib/oauth";
 
-let callbackCompletion: Promise<void> | null = null;
+let callbackCompletion: { key: string; promise: Promise<void> } | null = null;
 
 export const Route = createFileRoute("/auth/callback")({
   // Session lives in localStorage; this page is browser-only by nature.
@@ -124,9 +124,13 @@ function AuthCallbackPage() {
       navigate({ to: takeRedirect("/chat"), replace: true });
     };
 
-    // React Strict Mode or a remount must never consume the same code twice.
-    callbackCompletion ??= complete();
-    void callbackCompletion;
+    // React Strict Mode or a remount must never consume the same code twice,
+    // while a later login attempt with a new callback URL must still run.
+    const callbackKey = callbackUrlRef.current?.href ?? window.location.href;
+    if (!callbackCompletion || callbackCompletion.key !== callbackKey) {
+      callbackCompletion = { key: callbackKey, promise: complete() };
+    }
+    void callbackCompletion.promise;
   }, [navigate]);
 
   return (
