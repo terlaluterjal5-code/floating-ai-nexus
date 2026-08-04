@@ -86,13 +86,61 @@ export async function authenticate(
     return errorResponse(401, "UNAUTHORIZED", "Your session is invalid. Please sign in again.", requestId);
 
   const supabase = createUserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, token);
-  const { data: claims, error } = await supabase.auth.getClaims(token);
-  const sub = claims?.claims?.sub;
-  if (error || !sub) {
-    console.warn(`[auth] rid=${requestId} rejected: ${error?.message ?? "no subject"}`);
+
+  // Primary path: verify the JWT (local JWKS verification when the project uses
+  // asymmetric signing keys, remote verification otherwise).
+  let sub: string | undefined;
+  let firstFailure: string | undefined;
+  try {
+    const { data: claims, error } = await supabase.auth.getClaims(token);
+    if (error) firstFailure = error.message;
+    sub = claims?.claims?.sub as string | undefined;
+  } catch (e) {
+    firstFailure = (e as Error).message;
+  }
+
+  // Fallback: some key/signing configurations (and transient JWKS fetch
+  // failures) make getClaims fail for a perfectly valid token. Ask Supabase Auth
+  // directly before declaring the session invalid.
+  if (!sub) {
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      if (userData?.user?.id) {
+        sub = userData.user.id;
+        console.info(`[auth] rid=${requestId} verified via getUser fallback`);
+      } else if (userError) {
+        const status = userError.status ?? 0;
+        // 4xx from Auth means the token is genuinely rejected; anything else is
+        // an upstream/network problem and must not read as "session expired".
+        if (status >= 500 || status === 0) {
+          console.error(`[auth] rid=${requestId} auth service unavailable: ${userError.message}`);
+          return errorResponse(
+            503,
+            "AUTH_UNAVAILABLE",
+            "Sign-in service is temporarily unavailable. Please try again.",
+            requestId,
+            { retryable: true, retryAfterSec: 2 },
+          );
+        }
+        firstFailure = firstFailure ?? userError.message;
+      }
+    } catch (e) {
+      console.error(`[auth] rid=${requestId} auth service error: ${(e as Error).message}`);
+      return errorResponse(
+        503,
+        "AUTH_UNAVAILABLE",
+        "Sign-in service is temporarily unavailable. Please try again.",
+        requestId,
+        { retryable: true, retryAfterSec: 2 },
+      );
+    }
+  }
+
+  if (!sub) {
+    console.warn(`[auth] rid=${requestId} request rejected: ${firstFailure ?? "no subject"}`);
     return errorResponse(401, "UNAUTHORIZED", "Your session expired. Please sign in again.", requestId);
   }
-  return { supabase, userId: sub as string, geminiApiKey: GEMINI_API_KEY };
+  return { supabase, userId: sub, geminiApiKey: GEMINI_API_KEY };
 }
 
 /** In-memory request dedup: rejects identical requests fired within `windowMs`. */

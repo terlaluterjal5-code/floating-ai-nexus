@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { initializeAuth } from "@/lib/auth";
 
 export const FEATURE_KEYS = [
   "unlimited_deep_research",
@@ -38,6 +39,8 @@ export function clearSubscriptionCache() {
 }
 
 export async function fetchSubscription(force = false): Promise<SubscriptionCheck> {
+  // Never treat startup initialization as signed out.
+  await initializeAuth();
   const { data: sessionData } = await supabase.auth.getSession();
   const session = sessionData.session;
   if (!session) throw new Error("unauthenticated");
@@ -48,9 +51,8 @@ export async function fetchSubscription(force = false): Promise<SubscriptionChec
   if (!force && inflight) return inflight;
 
   inflight = (async () => {
-    const res = await fetch("/api/subscription-check", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
+    const { authedFetch } = await import("@/lib/authedFetch");
+    const res = await authedFetch("/api/subscription-check");
     const body = await res.json().catch(() => null);
     if (!res.ok) {
       throw new Error(body?.error?.message ?? `subscription-check failed (${res.status})`);

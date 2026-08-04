@@ -47,13 +47,10 @@ function ImagePage() {
     }
     setLoading(true);
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error("You must be signed in.");
-      const res = await fetch("/api/generate-image", {
+      const { authedFetch } = await import("@/lib/authedFetch");
+      const res = await authedFetch("/api/generate-image", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: p }),
       });
       if (!res.ok) {
