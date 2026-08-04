@@ -48,9 +48,8 @@ export async function fetchSubscription(force = false): Promise<SubscriptionChec
   if (!force && inflight) return inflight;
 
   inflight = (async () => {
-    const res = await fetch("/api/subscription-check", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
+    const { authedFetch } = await import("@/lib/authedFetch");
+    const res = await authedFetch("/api/subscription-check");
     const body = await res.json().catch(() => null);
     if (!res.ok) {
       throw new Error(body?.error?.message ?? `subscription-check failed (${res.status})`);
