@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { initializeAuth } from "@/lib/auth";
 
 export const FEATURE_KEYS = [
   "unlimited_deep_research",
@@ -38,6 +39,8 @@ export function clearSubscriptionCache() {
 }
 
 export async function fetchSubscription(force = false): Promise<SubscriptionCheck> {
+  // Never treat startup initialization as signed out.
+  await initializeAuth();
   const { data: sessionData } = await supabase.auth.getSession();
   const session = sessionData.session;
   if (!session) throw new Error("unauthenticated");
