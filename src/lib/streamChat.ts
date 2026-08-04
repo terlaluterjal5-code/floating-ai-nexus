@@ -1,5 +1,5 @@
 import type { ChatMode } from "./models";
-import { supabase } from "@/integrations/supabase/client";
+import { authedFetch, NotAuthenticatedError } from "@/lib/authedFetch";
 
 export type SendMessage = {
   role: "user" | "assistant";
@@ -45,16 +45,22 @@ export async function streamChat(
   conversationId?: string,
   requestType: ChatRequestType = "chat",
 ): Promise<StreamChatResult> {
-  const { data: sess } = await supabase.auth.getSession();
-  const token = sess.session?.access_token;
-  if (!token) throw new ChatApiError("You must be signed in.", { code: "UNAUTHORIZED" });
-
-  const res = await fetch("/api/ai-chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ messages, mode, conversationId, requestType }),
-    signal,
-  });
+  let res: Response;
+  try {
+    // Sends a freshly validated access token from the one shared Supabase
+    // client, and retries exactly once after a genuine 401.
+    res = await authedFetch("/api/ai-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages, mode, conversationId, requestType }),
+      signal,
+    });
+  } catch (e) {
+    if (e instanceof NotAuthenticatedError) {
+      throw new ChatApiError("You must be signed in.", { code: "UNAUTHORIZED" });
+    }
+    throw e;
+  }
 
   if (!res.ok || !res.body) {
     const text = await res.text().catch(() => "");
