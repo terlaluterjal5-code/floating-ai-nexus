@@ -78,66 +78,46 @@ export async function authenticate(
   if (!GEMINI_API_KEY)
     return errorResponse(500, "SERVER_MISCONFIG", "AI service is not configured.", requestId);
 
-  const authHeader = request.headers.get("authorization") ?? "";
-  if (!authHeader.startsWith("Bearer "))
+  const authHeader = request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
+  const bearerMatch = /^Bearer\s+([^\s]+)$/i.exec(authHeader.trim());
+  if (!bearerMatch)
     return errorResponse(401, "UNAUTHORIZED", "Sign in to continue.", requestId);
-  const token = authHeader.slice(7).trim();
-  if (token.split(".").length !== 3)
+  const token = bearerMatch[1] ?? "";
+
+  console.log("[chat-auth-server]", {
+    hasAuthorizationHeader: Boolean(authHeader),
+    hasToken: Boolean(token),
+    tokenLength: token.length,
+    tokenPrefix: token.slice(0, 10) || null,
+    supabaseUrl: SUPABASE_URL,
+  });
+
+  if (token.split(".").length !== 3) {
+    console.warn(`[auth] rid=${requestId} rejected: malformed bearer token`);
     return errorResponse(401, "UNAUTHORIZED", "Your session is invalid. Please sign in again.", requestId);
+  }
 
   const supabase = createUserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, token);
 
-  // Primary path: verify the JWT (local JWKS verification when the project uses
-  // asymmetric signing keys, remote verification otherwise).
-  let sub: string | undefined;
-  let firstFailure: string | undefined;
+  let claims: Awaited<ReturnType<typeof supabase.auth.getClaims>>["data"] | null = null;
+  let claimsError: Awaited<ReturnType<typeof supabase.auth.getClaims>>["error"] | null = null;
   try {
-    const { data: claims, error } = await supabase.auth.getClaims(token);
-    if (error) firstFailure = error.message;
-    sub = claims?.claims?.sub as string | undefined;
+    const result = await supabase.auth.getClaims(token);
+    claims = result.data;
+    claimsError = result.error;
   } catch (e) {
-    firstFailure = (e as Error).message;
+    claimsError = e instanceof Error ? e : new Error("JWT verification failed");
   }
 
-  // Fallback: some key/signing configurations (and transient JWKS fetch
-  // failures) make getClaims fail for a perfectly valid token. Ask Supabase Auth
-  // directly before declaring the session invalid.
-  if (!sub) {
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser(token);
-      if (userData?.user?.id) {
-        sub = userData.user.id;
-        console.info(`[auth] rid=${requestId} verified via getUser fallback`);
-      } else if (userError) {
-        const status = userError.status ?? 0;
-        // 4xx from Auth means the token is genuinely rejected; anything else is
-        // an upstream/network problem and must not read as "session expired".
-        if (status >= 500 || status === 0) {
-          console.error(`[auth] rid=${requestId} auth service unavailable: ${userError.message}`);
-          return errorResponse(
-            503,
-            "AUTH_UNAVAILABLE",
-            "Sign-in service is temporarily unavailable. Please try again.",
-            requestId,
-            { retryable: true, retryAfterSec: 2 },
-          );
-        }
-        firstFailure = firstFailure ?? userError.message;
-      }
-    } catch (e) {
-      console.error(`[auth] rid=${requestId} auth service error: ${(e as Error).message}`);
-      return errorResponse(
-        503,
-        "AUTH_UNAVAILABLE",
-        "Sign-in service is temporarily unavailable. Please try again.",
-        requestId,
-        { retryable: true, retryAfterSec: 2 },
-      );
-    }
-  }
+  const sub = claims?.claims?.sub as string | undefined;
+  console.log("[chat-auth-server-result]", {
+    hasClaims: Boolean(claims?.claims),
+    sub: sub ?? null,
+    error: claimsError?.message ?? null,
+  });
 
-  if (!sub) {
-    console.warn(`[auth] rid=${requestId} request rejected: ${firstFailure ?? "no subject"}`);
+  if (claimsError || !sub) {
+    console.warn(`[auth] rid=${requestId} rejected: ${claimsError?.message ?? "no subject"}`);
     return errorResponse(401, "UNAUTHORIZED", "Your session expired. Please sign in again.", requestId);
   }
   return { supabase, userId: sub, geminiApiKey: GEMINI_API_KEY };

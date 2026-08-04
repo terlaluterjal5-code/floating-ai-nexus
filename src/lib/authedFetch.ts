@@ -18,7 +18,24 @@ export class NotAuthenticatedError extends Error {
  */
 export async function getFreshAccessToken(): Promise<string> {
   await initializeAuth();
-  let session = (await supabase.auth.getSession()).data.session;
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) {
+    console.warn("[chat-auth] session read failed", {
+      name: sessionError.name,
+      message: sessionError.message,
+      status: sessionError.status,
+    });
+    throw new NotAuthenticatedError();
+  }
+  let session = sessionData.session;
+
+  console.log("[chat-auth]", {
+    hasSession: Boolean(session),
+    hasAccessToken: Boolean(session?.access_token),
+    accessTokenLength: session?.access_token?.length ?? 0,
+    userId: session?.user?.id ?? null,
+    expiresAt: session?.expires_at ?? null,
+  });
 
   const expiresAt = session?.expires_at ?? 0;
   const nearExpiry = expiresAt > 0 && expiresAt - EXPIRY_SKEW_SEC <= Math.floor(Date.now() / 1000);
@@ -36,6 +53,13 @@ export async function getFreshAccessToken(): Promise<string> {
     } else {
       console.info("[auth] token refresh succeeded");
       session = data.session;
+      console.log("[chat-auth]", {
+        hasSession: true,
+        hasAccessToken: Boolean(session.access_token),
+        accessTokenLength: session.access_token.length,
+        userId: session.user.id,
+        expiresAt: session.expires_at ?? null,
+      });
     }
   }
 
