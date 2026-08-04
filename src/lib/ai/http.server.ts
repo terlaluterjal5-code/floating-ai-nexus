@@ -100,24 +100,24 @@ export async function authenticate(
   const supabase = createUserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, token);
 
   let claims: Awaited<ReturnType<typeof supabase.auth.getClaims>>["data"] | null = null;
-  let claimsError: Awaited<ReturnType<typeof supabase.auth.getClaims>>["error"] | null = null;
+  let claimsErrorMessage: string | null = null;
   try {
     const result = await supabase.auth.getClaims(token);
     claims = result.data;
-    claimsError = result.error;
+    claimsErrorMessage = result.error?.message ?? null;
   } catch (e) {
-    claimsError = e instanceof Error ? e : new Error("JWT verification failed");
+    claimsErrorMessage = e instanceof Error ? e.message : "JWT verification failed";
   }
 
   const sub = claims?.claims?.sub as string | undefined;
   console.log("[chat-auth-server-result]", {
     hasClaims: Boolean(claims?.claims),
     sub: sub ?? null,
-    error: claimsError?.message ?? null,
+    error: claimsErrorMessage,
   });
 
-  if (claimsError || !sub) {
-    console.warn(`[auth] rid=${requestId} rejected: ${claimsError?.message ?? "no subject"}`);
+  if (claimsErrorMessage || !sub) {
+    console.warn(`[auth] rid=${requestId} rejected: ${claimsErrorMessage ?? "no subject"}`);
     return errorResponse(401, "UNAUTHORIZED", "Your session expired. Please sign in again.", requestId);
   }
   return { supabase, userId: sub, geminiApiKey: GEMINI_API_KEY };
