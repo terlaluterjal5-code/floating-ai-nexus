@@ -95,10 +95,12 @@ export async function authenticate(
   request: Request,
   requestId: string,
 ): Promise<AuthContext | Response> {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const serverUrl = process.env.SUPABASE_URL;
+  const serverKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const browserUrl = process.env.VITE_SUPABASE_URL;
+  const browserKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)
+  if ((!serverUrl || !serverKey) && (!browserUrl || !browserKey))
     return errorResponse(500, "SERVER_MISCONFIG", "Backend is not configured.", requestId);
   if (!GEMINI_API_KEY)
     return errorResponse(500, "SERVER_MISCONFIG", "AI service is not configured.", requestId);
@@ -109,13 +111,11 @@ export async function authenticate(
   if (!bearerMatch)
     return errorResponse(401, "UNAUTHORIZED", "Sign in to continue.", requestId);
   const token = bearerMatch[1] ?? "";
-  const configuredHostname = hostnameOf(SUPABASE_URL);
-
   if (token.split(".").length !== 3) {
     console.warn("[chat-auth-server]", {
       requestId,
       hasAuthorizationHeader: Boolean(authHeader),
-      projectHostname: configuredHostname,
+      projectHostname: serverUrl ? hostnameOf(serverUrl) : null,
       verificationResult: "malformed_token",
       status: 401,
       errorCategory: "authentication",
@@ -129,11 +129,20 @@ export async function authenticate(
   }
 
   const issuerHostname = tokenIssuerHostname(token);
-  if (issuerHostname && issuerHostname !== configuredHostname) {
+  const serverHostname = serverUrl ? hostnameOf(serverUrl) : null;
+  const browserHostname = browserUrl ? hostnameOf(browserUrl) : null;
+  const useBrowserPair = Boolean(
+    issuerHostname && browserHostname === issuerHostname && browserUrl && browserKey,
+  );
+  const supabaseUrl = useBrowserPair ? browserUrl : serverUrl;
+  const supabaseKey = useBrowserPair ? browserKey : serverKey;
+  const configuredHostname = supabaseUrl ? hostnameOf(supabaseUrl) : "missing";
+
+  if (!supabaseUrl || !supabaseKey || (issuerHostname && issuerHostname !== configuredHostname)) {
     console.error("[chat-auth-server]", {
       requestId,
       hasAuthorizationHeader: true,
-      projectHostname: configuredHostname,
+      projectHostname: serverHostname,
       verificationResult: "project_mismatch",
       status: 500,
       errorCategory: "configuration",
@@ -147,7 +156,7 @@ export async function authenticate(
     );
   }
 
-  const supabase = createUserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, token);
+  const supabase = createUserClient(supabaseUrl, supabaseKey, token);
 
   let authenticatedUserId: string | null = null;
   let verificationError: string | null = null;
