@@ -26,7 +26,7 @@ export function errorResponse(
   requestId: string,
   extra: { feature?: FeatureKey | string; retryable?: boolean; retryAfterSec?: number } = {},
 ) {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { "X-Request-Id": requestId };
   if (extra.retryAfterSec) headers["Retry-After"] = String(extra.retryAfterSec);
   return jsonResponse(
     status,
@@ -44,7 +44,11 @@ export function errorResponse(
 }
 
 /** RLS-scoped Supabase client acting as the bearer-token user. */
-export function createUserClient(url: string, key: string, token: string): SupabaseClient<Database> {
+export function createUserClient(
+  url: string,
+  key: string,
+  token: string,
+): SupabaseClient<Database> {
   return createClient<Database>(url, key, {
     global: {
       headers: { Authorization: `Bearer ${token}` },
@@ -65,62 +69,125 @@ export type AuthContext = {
   geminiApiKey: string;
 };
 
+function hostnameOf(value: string): string {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return "invalid";
+  }
+}
+
+function tokenIssuerHostname(token: string): string | null {
+  try {
+    const encoded = token.split(".")[1];
+    if (!encoded) return null;
+    const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(padded)) as { iss?: unknown };
+    return typeof payload.iss === "string" ? hostnameOf(payload.iss) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Validate the Supabase JWT. Returns a Response on failure. */
 export async function authenticate(
   request: Request,
   requestId: string,
 ): Promise<AuthContext | Response> {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const serverUrl = process.env.SUPABASE_URL;
+  const serverKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const browserUrl = process.env.VITE_SUPABASE_URL;
+  const browserKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)
+  if ((!serverUrl || !serverKey) && (!browserUrl || !browserKey))
     return errorResponse(500, "SERVER_MISCONFIG", "Backend is not configured.", requestId);
   if (!GEMINI_API_KEY)
     return errorResponse(500, "SERVER_MISCONFIG", "AI service is not configured.", requestId);
 
-  const authHeader = request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
+  const authHeader =
+    request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
   const bearerMatch = /^Bearer\s+([^\s]+)$/i.exec(authHeader.trim());
-  if (!bearerMatch)
-    return errorResponse(401, "UNAUTHORIZED", "Sign in to continue.", requestId);
+  if (!bearerMatch) return errorResponse(401, "UNAUTHORIZED", "Sign in to continue.", requestId);
   const token = bearerMatch[1] ?? "";
-
-  console.log("[chat-auth-server]", {
-    hasAuthorizationHeader: Boolean(authHeader),
-    hasToken: Boolean(token),
-    tokenLength: token.length,
-    tokenPrefix: token.slice(0, 10) || null,
-    supabaseUrl: SUPABASE_URL,
-  });
-
   if (token.split(".").length !== 3) {
-    console.warn(`[auth] rid=${requestId} rejected: malformed bearer token`);
-    return errorResponse(401, "UNAUTHORIZED", "Your session is invalid. Please sign in again.", requestId);
+    console.warn("[chat-auth-server]", {
+      requestId,
+      hasAuthorizationHeader: Boolean(authHeader),
+      projectHostname: serverUrl ? hostnameOf(serverUrl) : null,
+      verificationResult: "malformed_token",
+      status: 401,
+      errorCategory: "authentication",
+    });
+    return errorResponse(
+      401,
+      "UNAUTHORIZED",
+      "Your session is invalid. Please sign in again.",
+      requestId,
+    );
   }
 
-  const supabase = createUserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, token);
+  const issuerHostname = tokenIssuerHostname(token);
+  const serverHostname = serverUrl ? hostnameOf(serverUrl) : null;
+  const browserHostname = browserUrl ? hostnameOf(browserUrl) : null;
+  const useBrowserPair = Boolean(
+    issuerHostname && browserHostname === issuerHostname && browserUrl && browserKey,
+  );
+  const supabaseUrl = useBrowserPair ? browserUrl : serverUrl;
+  const supabaseKey = useBrowserPair ? browserKey : serverKey;
+  const configuredHostname = supabaseUrl ? hostnameOf(supabaseUrl) : "missing";
 
-  let claims: Awaited<ReturnType<typeof supabase.auth.getClaims>>["data"] | null = null;
-  let claimsErrorMessage: string | null = null;
+  if (!supabaseUrl || !supabaseKey || (issuerHostname && issuerHostname !== configuredHostname)) {
+    console.error("[chat-auth-server]", {
+      requestId,
+      hasAuthorizationHeader: true,
+      projectHostname: serverHostname,
+      verificationResult: "project_mismatch",
+      status: 500,
+      errorCategory: "configuration",
+    });
+    return errorResponse(
+      500,
+      "AUTH_PROJECT_MISMATCH",
+      "Authentication is temporarily misconfigured. Please try again later.",
+      requestId,
+      { retryable: false },
+    );
+  }
+
+  const supabase = createUserClient(supabaseUrl, supabaseKey, token);
+
+  let authenticatedUserId: string | null = null;
+  let verificationError: string | null = null;
   try {
-    const result = await supabase.auth.getClaims(token);
-    claims = result.data;
-    claimsErrorMessage = result.error?.message ?? null;
+    // getUser performs authoritative verification against the configured Auth
+    // server and avoids treating local/JWKS verification failures as expiry.
+    const result = await supabase.auth.getUser(token);
+    authenticatedUserId = result.data.user?.id ?? null;
+    verificationError = result.error?.message ?? null;
   } catch (e) {
-    claimsErrorMessage = e instanceof Error ? e.message : "JWT verification failed";
+    verificationError = e instanceof Error ? e.message : "JWT verification failed";
   }
 
-  const sub = claims?.claims?.sub as string | undefined;
   console.log("[chat-auth-server-result]", {
-    hasClaims: Boolean(claims?.claims),
-    sub: sub ?? null,
-    error: claimsErrorMessage,
+    requestId,
+    hasAuthorizationHeader: true,
+    projectHostname: configuredHostname,
+    verificationResult: authenticatedUserId ? "accepted" : "rejected",
+    authenticatedUserId,
+    status: authenticatedUserId ? 200 : 401,
+    errorCategory: authenticatedUserId ? null : "authentication",
   });
 
-  if (claimsErrorMessage || !sub) {
-    console.warn(`[auth] rid=${requestId} rejected: ${claimsErrorMessage ?? "no subject"}`);
-    return errorResponse(401, "UNAUTHORIZED", "Your session expired. Please sign in again.", requestId);
+  if (verificationError || !authenticatedUserId) {
+    return errorResponse(
+      401,
+      "UNAUTHORIZED",
+      "Your session expired. Please sign in again.",
+      requestId,
+    );
   }
-  return { supabase, userId: sub, geminiApiKey: GEMINI_API_KEY };
+  return { supabase, userId: authenticatedUserId, geminiApiKey: GEMINI_API_KEY };
 }
 
 /** In-memory request dedup: rejects identical requests fired within `windowMs`. */
