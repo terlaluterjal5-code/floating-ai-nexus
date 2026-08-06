@@ -29,7 +29,7 @@ export async function getFreshAccessToken(): Promise<string> {
     });
     throw new NotAuthenticatedError();
   }
-  let session = sessionData.session;
+  const session = sessionData.session;
 
   const expiresAt = session?.expires_at ?? 0;
   const nearExpiry = expiresAt > 0 && expiresAt - EXPIRY_SKEW_SEC <= Math.floor(Date.now() / 1000);
@@ -51,7 +51,7 @@ async function refreshOnce(): Promise<string | null> {
   if (!refreshInFlight) {
     refreshInFlight = supabase.auth
       .refreshSession()
-      .then(({ data, error }) => (error ? null : data.session?.access_token ?? null))
+      .then(({ data, error }) => (error ? null : (data.session?.access_token ?? null)))
       .catch(() => null)
       .finally(() => {
         refreshInFlight = null;

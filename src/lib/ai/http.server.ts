@@ -44,7 +44,11 @@ export function errorResponse(
 }
 
 /** RLS-scoped Supabase client acting as the bearer-token user. */
-export function createUserClient(url: string, key: string, token: string): SupabaseClient<Database> {
+export function createUserClient(
+  url: string,
+  key: string,
+  token: string,
+): SupabaseClient<Database> {
   return createClient<Database>(url, key, {
     global: {
       headers: { Authorization: `Bearer ${token}` },
@@ -99,7 +103,8 @@ export async function authenticate(
   if (!GEMINI_API_KEY)
     return errorResponse(500, "SERVER_MISCONFIG", "AI service is not configured.", requestId);
 
-  const authHeader = request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
+  const authHeader =
+    request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
   const bearerMatch = /^Bearer\s+([^\s]+)$/i.exec(authHeader.trim());
   if (!bearerMatch)
     return errorResponse(401, "UNAUTHORIZED", "Sign in to continue.", requestId);
@@ -115,7 +120,12 @@ export async function authenticate(
       status: 401,
       errorCategory: "authentication",
     });
-    return errorResponse(401, "UNAUTHORIZED", "Your session is invalid. Please sign in again.", requestId);
+    return errorResponse(
+      401,
+      "UNAUTHORIZED",
+      "Your session is invalid. Please sign in again.",
+      requestId,
+    );
   }
 
   const issuerHostname = tokenIssuerHostname(token);
@@ -162,7 +172,12 @@ export async function authenticate(
   });
 
   if (verificationError || !authenticatedUserId) {
-    return errorResponse(401, "UNAUTHORIZED", "Your session expired. Please sign in again.", requestId);
+    return errorResponse(
+      401,
+      "UNAUTHORIZED",
+      "Your session expired. Please sign in again.",
+      requestId,
+    );
   }
   return { supabase, userId: authenticatedUserId, geminiApiKey: GEMINI_API_KEY };
 }
