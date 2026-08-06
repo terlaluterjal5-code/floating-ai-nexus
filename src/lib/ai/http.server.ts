@@ -108,8 +108,7 @@ export async function authenticate(
   const authHeader =
     request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
   const bearerMatch = /^Bearer\s+([^\s]+)$/i.exec(authHeader.trim());
-  if (!bearerMatch)
-    return errorResponse(401, "UNAUTHORIZED", "Sign in to continue.", requestId);
+  if (!bearerMatch) return errorResponse(401, "UNAUTHORIZED", "Sign in to continue.", requestId);
   const token = bearerMatch[1] ?? "";
   if (token.split(".").length !== 3) {
     console.warn("[chat-auth-server]", {
