@@ -76,7 +76,7 @@ function PdfPage() {
   return (
     <AppShell>
       <div className="mb-3 mt-2 flex items-center gap-2 px-1">
-        <div className="rounded-xl bg-brand-gradient/20 p-1.5">
+        <div className="rounded-xl bg-primary/12 p-1.5">
           <FileText className="h-4 w-4 text-primary" />
         </div>
         <div>
@@ -88,8 +88,8 @@ function PdfPage() {
       </div>
 
       {!file ? (
-        <label className="glass mt-2 flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-white/15 p-6 text-center transition active:scale-[0.98]">
-          <div className="rounded-2xl bg-brand-gradient/20 p-3">
+        <label className="border border-border bg-surface/60 mt-2 flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-border p-6 text-center transition active:scale-[0.98]">
+          <div className="rounded-2xl bg-primary/12 p-3">
             <Upload className="h-6 w-6 text-primary" />
           </div>
           <div>
@@ -107,13 +107,13 @@ function PdfPage() {
         </label>
       ) : (
         <>
-          <div className="glass flex items-center gap-3 rounded-2xl p-3">
-            <div className="rounded-xl bg-brand-gradient/25 p-2.5">
+          <div className="border border-border bg-surface/60 flex items-center gap-3 rounded-2xl p-3">
+            <div className="rounded-xl bg-primary/12 p-2.5">
               <FileText className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13px] font-semibold">{file.name}</div>
-              <div className="text-[10px] font-mono text-muted-foreground">
+              <div className="text-[10px] text-muted-foreground">
                 {(file.size / 1024).toFixed(1)} KB · Ready
               </div>
             </div>
@@ -133,9 +133,9 @@ function PdfPage() {
               <button
                 key={t.label}
                 onClick={() => launchWithPrompt(t.prompt)}
-                className="glass flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition active:scale-[0.97]"
+                className="border border-border bg-surface/60 flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition active:scale-[0.99]"
               >
-                <div className="rounded-lg bg-brand-gradient/20 p-1.5">
+                <div className="rounded-lg bg-primary/12 p-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <span className="text-[13px] font-semibold">{t.label}</span>

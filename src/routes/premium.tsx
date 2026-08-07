@@ -44,14 +44,14 @@ function PremiumPage() {
 
   return (
     <AppShell>
-      <section className="relative mt-2 overflow-hidden rounded-3xl bg-brand-gradient p-5 text-white shadow-2xl shadow-primary/40">
+      <section className="relative mt-2 overflow-hidden rounded-3xl bg-primary p-5 text-white">
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="relative flex items-center gap-2.5">
           <div className="rounded-2xl bg-black/25 p-2.5">
             <Crown className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-90">
+            <div className="text-[10px] uppercase tracking-[0.2em] opacity-90">
               FloatingSpace
             </div>
             <div className="text-xl font-bold tracking-tight">Premium</div>
@@ -59,20 +59,20 @@ function PremiumPage() {
         </div>
         <div className="relative mt-4 flex items-baseline gap-1.5">
           <span className="text-3xl font-bold tracking-tight">200K</span>
-          <span className="text-sm font-mono opacity-90">IDR / month</span>
+          <span className="text-sm opacity-90">IDR / month</span>
         </div>
         <p className="relative mt-1 text-[12px] opacity-90">
           Cancel anytime · Priority AI · Unlimited research
         </p>
       </section>
 
-      <section className="mt-4 glass rounded-3xl p-4">
+      <section className="mt-4 border border-border bg-surface/60 rounded-3xl p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             What's included
           </h2>
           {subscription && (
-            <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
+            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
               Plan: {subscription.planName}
             </span>
           )}
@@ -82,7 +82,7 @@ function PremiumPage() {
             const active = subscription ? subscription.features[f.key] : premium;
             return (
             <li key={f.key} className="flex items-center gap-2.5">
-              <div className="rounded-lg bg-brand-gradient/20 p-1.5">
+              <div className="rounded-lg bg-primary/12 p-1.5">
                 <f.icon className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className={`flex-1 text-[13px] ${active ? "" : "text-muted-foreground"}`}>{f.text}</span>
@@ -95,16 +95,16 @@ function PremiumPage() {
 
       <button
         onClick={toggle}
-        className={`mt-4 w-full rounded-2xl py-3.5 text-[14px] font-semibold shadow-2xl transition active:scale-[0.98] ${
+        className={`mt-4 w-full rounded-2xl py-3.5 text-[14px] font-semibold transition active:scale-[0.98] ${
           premium
-            ? "glass text-foreground"
-            : "bg-brand-gradient text-brand-foreground shadow-primary/40"
+            ? "border border-border bg-surface/60 text-foreground"
+            : "bg-primary text-primary-foreground"
         }`}
       >
         {premium ? "Manage Premium (demo — tap to disable)" : "Upgrade to Premium — 200K IDR / mo"}
       </button>
 
-      <p className="mt-3 text-center text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
+      <p className="mt-3 text-center text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
         Payment integration is a demo in this preview
       </p>
     </AppShell>

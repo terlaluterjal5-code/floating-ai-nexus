@@ -135,7 +135,7 @@ function AuthCallbackPage() {
 
   return (
     <AppShell hideHeader>
-      <section className="mt-10 flex flex-col items-center justify-center rounded-3xl glass p-8 text-center">
+      <section className="mt-10 flex flex-col items-center justify-center rounded-3xl border border-border bg-surface/60 p-8 text-center">
         <BrandLogo size={48} />
         <h1 className="mt-4 text-lg font-semibold tracking-tight">
           <span className="text-foreground">FloatingSpace</span>
