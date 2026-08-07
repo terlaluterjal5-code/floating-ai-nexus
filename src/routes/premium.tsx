@@ -44,24 +44,21 @@ function PremiumPage() {
 
   return (
     <AppShell>
-      <section className="relative mt-2 overflow-hidden rounded-3xl bg-primary p-5 text-white">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-        <div className="relative flex items-center gap-2.5">
-          <div className="rounded-2xl bg-black/25 p-2.5">
-            <Crown className="h-6 w-6" />
-          </div>
+      <section className="mt-1 rounded-3xl border border-primary/25 bg-primary/10 p-5">
+        <div className="flex items-center gap-2.5">
+          <Crown className="h-6 w-6 text-primary" strokeWidth={1.8} />
           <div>
-            <div className="text-[10px] uppercase tracking-[0.2em] opacity-90">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
               FloatingSpace
             </div>
-            <div className="text-xl font-bold tracking-tight">Premium</div>
+            <div className="text-xl font-semibold tracking-tight text-foreground">Premium</div>
           </div>
         </div>
-        <div className="relative mt-4 flex items-baseline gap-1.5">
-          <span className="text-3xl font-bold tracking-tight">200K</span>
-          <span className="text-sm opacity-90">IDR / month</span>
+        <div className="mt-4 flex items-baseline gap-1.5">
+          <span className="text-3xl font-semibold tracking-tight text-foreground">200K</span>
+          <span className="text-sm text-muted-foreground">IDR / month</span>
         </div>
-        <p className="relative mt-1 text-[12px] opacity-90">
+        <p className="mt-1 text-[12px] text-muted-foreground">
           Cancel anytime · Priority AI · Unlimited research
         </p>
       </section>
@@ -81,10 +78,8 @@ function PremiumPage() {
           {FEATURES.map((f) => {
             const active = subscription ? subscription.features[f.key] : premium;
             return (
-            <li key={f.key} className="flex items-center gap-2.5">
-              <div className="rounded-lg bg-primary/12 p-1.5">
-                <f.icon className="h-3.5 w-3.5 text-primary" />
-              </div>
+            <li key={f.key} className="flex items-center gap-2.5 py-0.5">
+              <f.icon className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.8} />
               <span className={`flex-1 text-[13px] ${active ? "" : "text-muted-foreground"}`}>{f.text}</span>
               <Check className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground/40"}`} />
             </li>
@@ -104,7 +99,7 @@ function PremiumPage() {
         {premium ? "Manage Premium (demo — tap to disable)" : "Upgrade to Premium — 200K IDR / mo"}
       </button>
 
-      <p className="mt-3 text-center text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+      <p className="mt-3 text-center text-[11px] text-muted-foreground">
         Payment integration is a demo in this preview
       </p>
     </AppShell>
