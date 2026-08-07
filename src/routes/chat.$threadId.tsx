@@ -381,7 +381,7 @@ function ChatPage() {
         {!loading && empty && (
           <div className="mt-8 flex flex-col items-center gap-3 px-6 text-center">
             <BrandLogo size={64} />
-            <h2 className="text-lg font-semibold text-gradient">
+            <h2 className="text-lg font-semibold text-foreground">
               How can I help you today?
             </h2>
             <p className="text-[12px] text-muted-foreground">
@@ -393,7 +393,7 @@ function ChatPage() {
           <MessageBubble key={m.id} message={m} />
         ))}
         {streaming && (
-          <div className="animate-fade-in">
+          <div className="animate-msg-in">
             {streamText ? (
               <div className="pl-1 pr-2">
                 <ChatMarkdown text={streamText} />
@@ -492,7 +492,7 @@ function MessageBubble({ message }: { message: Message }) {
   const time = formatTime(message.created_at);
   if (message.role === "user") {
     return (
-      <div className="flex flex-col items-end pl-6 animate-fade-in">
+      <div className="flex flex-col items-end pl-6 animate-msg-in">
         <div className="rounded-2xl bg-brand-gradient px-3.5 py-2 text-[14px] text-brand-foreground shadow-lg shadow-primary/20">
           {message.attachments && message.attachments.length > 0 && (
             <div className="mb-1.5 flex flex-wrap gap-1">
@@ -514,7 +514,7 @@ function MessageBubble({ message }: { message: Message }) {
     );
   }
   return (
-    <div className="animate-fade-in pl-1 pr-2">
+    <div className="animate-msg-in pl-1 pr-2">
       <ChatMarkdown text={message.content} />
       <div className="mt-1 pl-1 text-[10px] text-muted-foreground">{time}</div>
     </div>

@@ -93,7 +93,7 @@ function HistoryPage() {
   return (
     <AppShell>
       <div className="mt-2 flex items-center justify-between px-1">
-        <h1 className="text-lg font-semibold tracking-tight text-gradient">Chat History</h1>
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">Chat History</h1>
         <button
           onClick={create}
           className="flex items-center gap-1 rounded-full bg-brand-gradient px-3 py-1.5 text-[11px] font-semibold text-brand-foreground shadow-lg shadow-primary/30 active:scale-95"

@@ -138,7 +138,7 @@ function AuthCallbackPage() {
       <section className="mt-10 flex flex-col items-center justify-center rounded-3xl glass p-8 text-center">
         <BrandLogo size={48} />
         <h1 className="mt-4 text-lg font-semibold tracking-tight">
-          <span className="text-gradient">FloatingSpace</span>
+          <span className="text-foreground">FloatingSpace</span>
         </h1>
         <p className="mt-2 text-[12.5px] text-muted-foreground">{message}</p>
       </section>

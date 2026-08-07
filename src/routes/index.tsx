@@ -87,14 +87,14 @@ function Index() {
       {/* Hero */}
       <section className="relative mt-2 overflow-hidden rounded-3xl glass p-5">
         <div
-          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-40 blur-3xl animate-float-orb"
+          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-10 blur-3xl"
           aria-hidden
         />
         <div className="relative flex items-start gap-3">
           <BrandLogo size={44} />
           <div className="flex-1">
             <h1 className="text-[22px] font-semibold leading-tight tracking-tight">
-              <span className="text-gradient">FloatingSpace</span>
+              <span className="text-foreground">FloatingSpace</span>
               <span className="text-foreground/90"> AI</span>
             </h1>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
@@ -112,7 +112,7 @@ function Index() {
               Reasoning · Research · Analysis
             </div>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-brand-foreground shadow-lg shadow-primary/30 animate-pulse-ring">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-brand-foreground shadow-lg shadow-primary/30">
             <ArrowRight className="h-4 w-4" />
           </div>
         </button>

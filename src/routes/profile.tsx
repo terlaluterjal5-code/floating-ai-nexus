@@ -73,7 +73,7 @@ function ProfilePage() {
     <AppShell>
       <section className="relative mt-2 overflow-hidden rounded-3xl glass p-5">
         <div
-          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-30 blur-3xl animate-float-orb"
+          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-10 blur-3xl"
           aria-hidden
         />
         <div className="relative flex items-center gap-3">

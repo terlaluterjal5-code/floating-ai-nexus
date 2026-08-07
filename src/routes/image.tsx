@@ -80,7 +80,7 @@ function ImagePage() {
             <Sparkles className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-gradient">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
               Image Generator
             </h1>
             <p className="text-[11px] text-muted-foreground">

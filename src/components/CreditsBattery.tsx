@@ -25,7 +25,7 @@ export function CreditsBattery({ compact = false }: { compact?: boolean }) {
           <div className="absolute -right-[3px] top-1/2 h-1.5 w-[2px] -translate-y-1/2 rounded-r-sm bg-white/25" />
         </div>
         {premium ? (
-          <div className="flex items-center gap-0.5 text-[10px] font-mono font-semibold text-gradient">
+          <div className="flex items-center gap-0.5 text-[10px] font-mono font-semibold text-foreground">
             <InfIcon className="h-3 w-3" />
           </div>
         ) : (

@@ -80,7 +80,7 @@ function PdfPage() {
           <FileText className="h-4 w-4 text-primary" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-gradient">PDF Analyzer</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-foreground">PDF Analyzer</h1>
           <p className="text-[11px] text-muted-foreground">
             Upload a PDF and let FloatingSpace read, summarize, and analyze it.
           </p>

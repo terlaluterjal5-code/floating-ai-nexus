@@ -50,13 +50,13 @@ function AuthPage() {
     <AppShell hideHeader>
       <section className="relative mt-6 overflow-hidden rounded-3xl glass p-6">
         <div
-          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-40 blur-3xl animate-float-orb"
+          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-10 blur-3xl"
           aria-hidden
         />
         <div className="relative flex flex-col items-center text-center">
           <BrandLogo size={56} />
           <h1 className="mt-4 text-2xl font-semibold tracking-tight">
-            <span className="text-gradient">Welcome to FloatingSpace</span>
+            <span className="text-foreground">Welcome to FloatingSpace</span>
           </h1>
           <p className="mt-1 text-[12.5px] text-muted-foreground">
             Sign in and unlock a{" "}

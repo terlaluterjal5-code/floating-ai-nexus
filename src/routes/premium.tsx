@@ -45,7 +45,7 @@ function PremiumPage() {
   return (
     <AppShell>
       <section className="relative mt-2 overflow-hidden rounded-3xl bg-brand-gradient p-5 text-white shadow-2xl shadow-primary/40">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/20 blur-3xl animate-float-orb" />
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="relative flex items-center gap-2.5">
           <div className="rounded-2xl bg-black/25 p-2.5">
             <Crown className="h-6 w-6" />
@@ -98,7 +98,7 @@ function PremiumPage() {
         className={`mt-4 w-full rounded-2xl py-3.5 text-[14px] font-semibold shadow-2xl transition active:scale-[0.98] ${
           premium
             ? "glass text-foreground"
-            : "bg-brand-gradient text-brand-foreground shadow-primary/40 animate-pulse-ring"
+            : "bg-brand-gradient text-brand-foreground shadow-primary/40"
         }`}
       >
         {premium ? "Manage Premium (demo — tap to disable)" : "Upgrade to Premium — 200K IDR / mo"}
