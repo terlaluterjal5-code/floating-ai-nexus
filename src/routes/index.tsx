@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { BrandLogo } from "@/components/BrandLogo";
 import {
   Cpu,
   Globe2,
