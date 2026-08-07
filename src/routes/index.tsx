@@ -86,17 +86,12 @@ function Index() {
     <AppShell>
       {/* Hero */}
       <section className="mt-1">
-        <div className="flex items-center gap-3">
-          <BrandLogo size={38} />
-          <div className="min-w-0">
-            <h1 className="truncate text-[21px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
-              FloatingSpace
-            </h1>
-            <p className="truncate text-[12px] text-muted-foreground">
-              Reasoning · Research · Analysis
-            </p>
-          </div>
-        </div>
+        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
+          Your futuristic AI workspace
+        </h1>
+        <p className="mt-1 text-[12.5px] text-muted-foreground">
+          Reasoning · Deep research · Images · PDF analysis
+        </p>
         <button
           onClick={() => startChat("", "standard")}
           className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-border bg-surface/70 px-4 py-3.5 text-left transition duration-200 active:bg-surface"
