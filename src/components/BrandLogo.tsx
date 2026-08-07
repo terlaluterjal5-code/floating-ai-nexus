@@ -1,36 +1,50 @@
-import logoAsset from "@/assets/floating-space-logo.png.asset.json";
-
-export function BrandLogo({ size = 32 }: { size?: number }) {
+/**
+ * FloatingSpace mark — a minimal orbital glyph: a solid core with a tilted
+ * orbit ring and a single satellite node. Pure vector, legible from 16px up.
+ */
+export function BrandLogo({
+  size = 32,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) {
   return (
-    <div
-      className="relative flex items-center justify-center"
-      style={{ width: size, height: size }}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      role="img"
+      aria-label="FloatingSpace"
+      className={className}
     >
-      <div
-        className="absolute inset-0 rounded-full bg-brand-gradient blur-lg opacity-60 animate-float-orb"
-        aria-hidden
+      <circle cx="16" cy="16" r="14.5" className="fill-primary/10" />
+      <ellipse
+        cx="16"
+        cy="16"
+        rx="12"
+        ry="5.2"
+        transform="rotate(-28 16 16)"
+        className="stroke-primary"
+        strokeWidth="1.7"
       />
-      <img
-        src={logoAsset.url}
-        alt="FloatingSpace logo"
-        className="relative h-full w-full object-contain drop-shadow-[0_0_10px_oklch(0.78_0.16_220/0.55)]"
-        style={{ filter: "invert(1)" }}
-        draggable={false}
-      />
-    </div>
+      <circle cx="16" cy="16" r="4.4" className="fill-primary" />
+      <circle cx="26.1" cy="10.2" r="2.5" className="fill-foreground" />
+    </svg>
   );
 }
 
 export function BrandMark({ tagline = false }: { tagline?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <BrandLogo size={30} />
+    <div className="flex items-center gap-2">
+      <BrandLogo size={26} />
       <div className="leading-tight">
-        <div className="text-[15px] font-semibold tracking-tight text-gradient">
-          FloatingSpace
+        <div className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+          Floating<span className="text-primary">Space</span>
         </div>
         {tagline && (
-          <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="text-[9.5px] uppercase tracking-[0.16em] text-muted-foreground">
             by ZNTech
           </div>
         )}
