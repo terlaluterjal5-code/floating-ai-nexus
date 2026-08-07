@@ -31,31 +31,85 @@ const TOPICS = [
     section: "Technology",
     icon: Cpu,
     items: [
-      { icon: Bot, label: "Latest AI developments", prompt: "Give me a deep briefing on the latest breakthroughs in AI in the past 6 months." },
-      { icon: Rocket, label: "Future technology", prompt: "What are the most impactful emerging technologies of the next decade?" },
-      { icon: Bot, label: "Robotics", prompt: "Explain the current state of humanoid robotics and where it's heading." },
-      { icon: Rocket, label: "Space exploration", prompt: "Summarize the most exciting current space exploration missions and what they aim to discover." },
-      { icon: Atom, label: "Quantum computing", prompt: "Explain quantum computing progress and its real-world implications." },
+      {
+        icon: Bot,
+        label: "Latest AI developments",
+        prompt: "Give me a deep briefing on the latest breakthroughs in AI in the past 6 months.",
+      },
+      {
+        icon: Rocket,
+        label: "Future technology",
+        prompt: "What are the most impactful emerging technologies of the next decade?",
+      },
+      {
+        icon: Bot,
+        label: "Robotics",
+        prompt: "Explain the current state of humanoid robotics and where it's heading.",
+      },
+      {
+        icon: Rocket,
+        label: "Space exploration",
+        prompt:
+          "Summarize the most exciting current space exploration missions and what they aim to discover.",
+      },
+      {
+        icon: Atom,
+        label: "Quantum computing",
+        prompt: "Explain quantum computing progress and its real-world implications.",
+      },
     ],
   },
   {
     section: "Geopolitics",
     icon: Globe2,
     items: [
-      { icon: Globe2, label: "Global conflicts", prompt: "Give me a neutral, well-sourced overview of the most significant ongoing global conflicts." },
-      { icon: Landmark, label: "International relations", prompt: "Analyze the current state of international relations between major powers." },
-      { icon: Coins, label: "World economy", prompt: "What are the key trends shaping the world economy right now?" },
-      { icon: TrendingUp, label: "Global power changes", prompt: "How is the global balance of power shifting and why?" },
+      {
+        icon: Globe2,
+        label: "Global conflicts",
+        prompt:
+          "Give me a neutral, well-sourced overview of the most significant ongoing global conflicts.",
+      },
+      {
+        icon: Landmark,
+        label: "International relations",
+        prompt: "Analyze the current state of international relations between major powers.",
+      },
+      {
+        icon: Coins,
+        label: "World economy",
+        prompt: "What are the key trends shaping the world economy right now?",
+      },
+      {
+        icon: TrendingUp,
+        label: "Global power changes",
+        prompt: "How is the global balance of power shifting and why?",
+      },
     ],
   },
   {
     section: "Finance",
     icon: LineChart,
     items: [
-      { icon: LineChart, label: "Stock market", prompt: "Give me an analytical overview of the current stock market environment." },
-      { icon: Coins, label: "Cryptocurrency", prompt: "Analyze the current state of the crypto market with key trends and risks." },
-      { icon: TrendingUp, label: "Investment insights", prompt: "Share thoughtful, diversified investment insights for the current environment." },
-      { icon: LineChart, label: "Economic trends", prompt: "What are the major macroeconomic trends I should be aware of?" },
+      {
+        icon: LineChart,
+        label: "Stock market",
+        prompt: "Give me an analytical overview of the current stock market environment.",
+      },
+      {
+        icon: Coins,
+        label: "Cryptocurrency",
+        prompt: "Analyze the current state of the crypto market with key trends and risks.",
+      },
+      {
+        icon: TrendingUp,
+        label: "Investment insights",
+        prompt: "Share thoughtful, diversified investment insights for the current environment.",
+      },
+      {
+        icon: LineChart,
+        label: "Economic trends",
+        prompt: "What are the major macroeconomic trends I should be aware of?",
+      },
     ],
   },
 ];
@@ -70,7 +124,11 @@ function Index() {
       return;
     }
     try {
-      const conv = await createConversation(user.id, mode, prompt ? prompt.slice(0, 60) : "New chat");
+      const conv = await createConversation(
+        user.id,
+        mode,
+        prompt ? prompt.slice(0, 60) : "New chat",
+      );
       navigate({
         to: "/chat/$threadId",
         params: { threadId: conv.id },

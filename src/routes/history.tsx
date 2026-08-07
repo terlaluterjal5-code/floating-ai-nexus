@@ -33,8 +33,14 @@ function HistoryPage() {
     return () => clearTimeout(t);
   }, [q]);
 
-  const { items, loading: listLoading, loadingMore, hasMore, loadMore, refresh } =
-    useConversations(user?.id, debouncedQ);
+  const {
+    items,
+    loading: listLoading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+  } = useConversations(user?.id, debouncedQ);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -128,7 +134,10 @@ function HistoryPage() {
           </div>
         )}
         {items.map((t) => (
-          <div key={t.id} className="border border-border bg-surface/60 flex items-center gap-1 rounded-2xl p-2">
+          <div
+            key={t.id}
+            className="border border-border bg-surface/60 flex items-center gap-1 rounded-2xl p-2"
+          >
             <Link
               to="/chat/$threadId"
               params={{ threadId: t.id }}
@@ -177,9 +186,7 @@ function HistoryPage() {
           </div>
         )}
         {!hasMore && items.length > 0 && (
-          <div className="py-2 text-center text-[10px] text-muted-foreground">
-            End of history
-          </div>
+          <div className="py-2 text-center text-[10px] text-muted-foreground">End of history</div>
         )}
       </div>
     </AppShell>

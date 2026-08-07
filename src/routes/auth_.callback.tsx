@@ -13,10 +13,7 @@ export const Route = createFileRoute("/auth_/callback")({
   // Session lives in localStorage; this page is browser-only by nature.
   ssr: false,
   head: () => ({
-    meta: [
-      { title: "Signing in — FloatingSpace" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Signing in — FloatingSpace" }, { name: "robots", content: "noindex" }],
   }),
   component: AuthCallbackPage,
 });
@@ -99,7 +96,9 @@ function AuthCallbackPage() {
       }
 
       if (!code && !access_token && !session) {
-        console.warn("[auth.callback] Callback arrived without an authorization code or session tokens");
+        console.warn(
+          "[auth.callback] Callback arrived without an authorization code or session tokens",
+        );
       }
 
       // Confirm the session can be read back from persistent storage before

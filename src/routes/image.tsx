@@ -156,8 +156,15 @@ function ImagePage() {
         )}
         <div className="grid grid-cols-2 gap-2">
           {images.map((img) => (
-            <div key={img.id} className="border border-border bg-surface/60 group relative overflow-hidden rounded-2xl">
-              <img src={img.dataUrl} alt={img.prompt} className="aspect-square w-full object-cover" />
+            <div
+              key={img.id}
+              className="border border-border bg-surface/60 group relative overflow-hidden rounded-2xl"
+            >
+              <img
+                src={img.dataUrl}
+                alt={img.prompt}
+                className="aspect-square w-full object-cover"
+              />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
                 <p className="line-clamp-2 text-[10px] text-white/90">{img.prompt}</p>
               </div>

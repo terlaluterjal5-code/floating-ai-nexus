@@ -10,7 +10,10 @@ export const Route = createFileRoute("/pdf")({
   head: () => ({
     meta: [
       { title: "PDF Analyzer — FloatingSpace" },
-      { name: "description", content: "Upload a PDF and let FloatingSpace analyze, summarize, and explain it." },
+      {
+        name: "description",
+        content: "Upload a PDF and let FloatingSpace analyze, summarize, and explain it.",
+      },
     ],
   }),
   component: PdfPage,
@@ -26,16 +29,37 @@ function fileToDataUrl(f: File): Promise<string> {
 }
 
 const TASKS = [
-  { label: "Summarize", prompt: "Give me a comprehensive summary of this document with the key points, structure, and main takeaways." },
-  { label: "Extract key info", prompt: "Extract all important information from this PDF: dates, names, numbers, decisions, and action items." },
-  { label: "Create a report", prompt: "Create a detailed structured report based on this document with sections, findings, and recommendations." },
-  { label: "Q&A", prompt: "Read this document carefully. I'll ask questions about it. Confirm you've read it, then wait for my questions." },
+  {
+    label: "Summarize",
+    prompt:
+      "Give me a comprehensive summary of this document with the key points, structure, and main takeaways.",
+  },
+  {
+    label: "Extract key info",
+    prompt:
+      "Extract all important information from this PDF: dates, names, numbers, decisions, and action items.",
+  },
+  {
+    label: "Create a report",
+    prompt:
+      "Create a detailed structured report based on this document with sections, findings, and recommendations.",
+  },
+  {
+    label: "Q&A",
+    prompt:
+      "Read this document carefully. I'll ask questions about it. Confirm you've read it, then wait for my questions.",
+  },
 ];
 
 function PdfPage() {
   const nav = useNavigate();
   const { user } = useSession();
-  const [file, setFile] = useState<{ name: string; mime: string; dataUrl: string; size: number } | null>(null);
+  const [file, setFile] = useState<{
+    name: string;
+    mime: string;
+    dataUrl: string;
+    size: number;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function onPick(f: File | null) {

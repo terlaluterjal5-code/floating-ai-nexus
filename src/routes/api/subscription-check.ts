@@ -52,7 +52,8 @@ function truthy(row: {
 }): boolean {
   if (row.value_bool !== null) return row.value_bool;
   if (row.value_number !== null) return Number(row.value_number) > 0;
-  if (row.value_text !== null) return !["", "false", "0", "none", "off"].includes(row.value_text.toLowerCase());
+  if (row.value_text !== null)
+    return !["", "false", "0", "none", "off"].includes(row.value_text.toLowerCase());
   return false;
 }
 
@@ -85,7 +86,9 @@ export const Route = createFileRoute("/api/subscription-check")({
           const supabase = createUserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, token);
           const { data: userData, error: userError } = await supabase.auth.getUser();
           if (userError || !userData?.user) {
-            console.warn(`[subscription-check] rid=${reqId} auth failed: ${userError?.message ?? "no user"}`);
+            console.warn(
+              `[subscription-check] rid=${reqId} auth failed: ${userError?.message ?? "no user"}`,
+            );
             return jsonError(401, "unauthorized", "Session is invalid or expired.", reqId);
           }
           const userId = userData.user.id;
@@ -99,8 +102,7 @@ export const Route = createFileRoute("/api/subscription-check")({
           if (subError) throw Object.assign(new Error(subError.message), { step });
 
           step = "resolve_plan";
-          const hasActiveSub =
-            !!sub && (ACTIVE_STATUSES as readonly string[]).includes(sub.status);
+          const hasActiveSub = !!sub && (ACTIVE_STATUSES as readonly string[]).includes(sub.status);
           let planId = hasActiveSub ? sub!.plan_id : null;
           let status = hasActiveSub ? sub!.status : "active";
           let periodEnd = sub?.current_period_end ?? null;
@@ -150,9 +152,10 @@ export const Route = createFileRoute("/api/subscription-check")({
             return jsonError(404, "plan_not_found", "The subscribed plan no longer exists.", reqId);
           }
 
-          const features = Object.fromEntries(
-            FEATURE_KEYS.map((k) => [k, false]),
-          ) as Record<FeatureKey, boolean>;
+          const features = Object.fromEntries(FEATURE_KEYS.map((k) => [k, false])) as Record<
+            FeatureKey,
+            boolean
+          >;
           const featureLabels: Record<string, string> = {};
           for (const f of plan.plan_features ?? []) {
             if ((FEATURE_KEYS as readonly string[]).includes(f.feature_key)) {
@@ -171,7 +174,11 @@ export const Route = createFileRoute("/api/subscription-check")({
               plan: plan.code,
               planName: plan.name,
               status,
-              price: { amountCents: plan.price_cents, currency: plan.currency, period: plan.billing_period },
+              price: {
+                amountCents: plan.price_cents,
+                currency: plan.currency,
+                period: plan.billing_period,
+              },
               currentPeriodEnd: periodEnd,
               cancelAtPeriodEnd,
               autoAssignedFreePlan: assigned,
@@ -187,7 +194,12 @@ export const Route = createFileRoute("/api/subscription-check")({
             `[subscription-check] rid=${reqId} step=${e.step ?? step} ms=${Date.now() - started} error=${e.message}`,
             e.stack,
           );
-          return jsonError(500, "internal_error", "Could not verify your subscription. Please try again.", reqId);
+          return jsonError(
+            500,
+            "internal_error",
+            "Could not verify your subscription. Please try again.",
+            reqId,
+          );
         }
       },
 

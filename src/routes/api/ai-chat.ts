@@ -106,11 +106,23 @@ export const Route = createFileRoute("/api/ai-chat")({
 
         // 3. Request deduplication
         const last = messages[messages.length - 1];
-        const dedupKey = hashKey([userId, conversationId, mode, last?.role, last?.content?.slice(0, 400)]);
+        const dedupKey = hashKey([
+          userId,
+          conversationId,
+          mode,
+          last?.role,
+          last?.content?.slice(0, 400),
+        ]);
         if (!claimRequest(dedupKey)) {
-          return errorResponse(409, "DUPLICATE_REQUEST", "This request is already being processed.", reqId, {
-            retryable: false,
-          });
+          return errorResponse(
+            409,
+            "DUPLICATE_REQUEST",
+            "This request is already being processed.",
+            reqId,
+            {
+              retryable: false,
+            },
+          );
         }
 
         // 4. Subscription + feature authorization (server-side only)
@@ -119,7 +131,9 @@ export const Route = createFileRoute("/api/ai-chat")({
 
         const deepRequested = mode === "deep" || requestType === "deep_research";
         if (deepRequested && !f.unlimited_deep_research) {
-          console.warn(`[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=unlimited_deep_research`);
+          console.warn(
+            `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=unlimited_deep_research`,
+          );
           return errorResponse(
             403,
             "FEATURE_NOT_AVAILABLE",
@@ -130,16 +144,26 @@ export const Route = createFileRoute("/api/ai-chat")({
         }
         const gated = REQUEST_TYPE_FEATURE[requestType];
         if (gated && !f[gated]) {
-          console.warn(`[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=${gated}`);
-          return errorResponse(403, "FEATURE_NOT_AVAILABLE", "This feature is not available on your current plan.", reqId, {
-            feature: gated,
-          });
+          console.warn(
+            `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=${gated}`,
+          );
+          return errorResponse(
+            403,
+            "FEATURE_NOT_AVAILABLE",
+            "This feature is not available on your current plan.",
+            reqId,
+            {
+              feature: gated,
+            },
+          );
         }
 
         const bytes = attachmentBytes(messages);
         const cap = f.larger_pdf_analysis ? PREMIUM_ATTACHMENT_BYTES : FREE_ATTACHMENT_BYTES;
         if (bytes > cap) {
-          console.warn(`[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=larger_pdf_analysis bytes=${bytes}`);
+          console.warn(
+            `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=larger_pdf_analysis bytes=${bytes}`,
+          );
           return errorResponse(
             413,
             f.larger_pdf_analysis ? "ATTACHMENT_TOO_LARGE" : "FEATURE_NOT_AVAILABLE",
@@ -167,13 +191,19 @@ export const Route = createFileRoute("/api/ai-chat")({
               status: "rate_limited",
               error: `plan=${ent.plan} scope=${rl.scope}`,
             });
-            console.warn(`[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} status=chat_limit scope=${rl.scope}`);
+            console.warn(
+              `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} status=chat_limit scope=${rl.scope}`,
+            );
             return errorResponse(
               429,
               "CHAT_LIMIT_REACHED",
               `You've reached your ${rl.scope === "minute" ? "per-minute" : "daily"} chat limit on the ${ent.planName} plan. Upgrade for unlimited chat.`,
               reqId,
-              { feature: "unlimited_chat_credits", retryable: true, retryAfterSec: rl.retryAfterSec },
+              {
+                feature: "unlimited_chat_credits",
+                retryable: true,
+                retryAfterSec: rl.retryAfterSec,
+              },
             );
           }
         }
@@ -188,7 +218,9 @@ export const Route = createFileRoute("/api/ai-chat")({
         const memoryLimit = fast ? 8 : 12;
         const [memories, summary] = await Promise.all([
           loadUserMemories(supabase, userId, memoryLimit),
-          conversationId ? loadConversationSummary(supabase, conversationId) : Promise.resolve<string | null>(null),
+          conversationId
+            ? loadConversationSummary(supabase, conversationId)
+            : Promise.resolve<string | null>(null),
         ]);
         const systemBlocks: string[] = [cfg.system];
         if (summary) systemBlocks.push(`Prior conversation summary:\n${summary}`);
@@ -242,8 +274,15 @@ export const Route = createFileRoute("/api/ai-chat")({
                 `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} model=${model} status=upstream_error code=${ge.code} http=${ge.status} retry_count=${retryCount}`,
               );
               const transient =
-                ge.code === "rate_limited" || ge.code === "quota_exceeded" || ge.code === "upstream";
-              if (transient && model !== MODEL_FLASH && !request.signal.aborted && fullText.length === 0) {
+                ge.code === "rate_limited" ||
+                ge.code === "quota_exceeded" ||
+                ge.code === "upstream";
+              if (
+                transient &&
+                model !== MODEL_FLASH &&
+                !request.signal.aborted &&
+                fullText.length === 0
+              ) {
                 retryCount++;
                 try {
                   await run(MODEL_FLASH);
@@ -278,10 +317,14 @@ export const Route = createFileRoute("/api/ai-chat")({
                 .select("id, created_at")
                 .maybeSingle();
               if (error) {
-                console.error(`[ai-chat] rid=${reqId} status=message_save_failed error=${error.message}`);
+                console.error(
+                  `[ai-chat] rid=${reqId} status=message_save_failed error=${error.message}`,
+                );
               } else if (data) {
                 messageId = data.id;
-                write({ meta: { messageId: data.id, createdAt: data.created_at, model: usedModel, usage } });
+                write({
+                  meta: { messageId: data.id, createdAt: data.created_at, model: usedModel, usage },
+                });
                 await supabase
                   .from("conversations")
                   .update({ updated_at: new Date().toISOString() })

@@ -2,13 +2,7 @@
  * FloatingSpace mark — a minimal orbital glyph: a solid core with a tilted
  * orbit ring and a single satellite node. Pure vector, legible from 16px up.
  */
-export function BrandLogo({
-  size = 32,
-  className = "",
-}: {
-  size?: number;
-  className?: string;
-}) {
+export function BrandLogo({ size = 32, className = "" }: { size?: number; className?: string }) {
   return (
     <svg
       width={size}

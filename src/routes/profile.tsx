@@ -10,7 +10,10 @@ export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
       { title: "Your Profile — FloatingSpace" },
-      { name: "description", content: "Manage your FloatingSpace account, view your Premium trial status and sign out." },
+      {
+        name: "description",
+        content: "Manage your FloatingSpace account, view your Premium trial status and sign out.",
+      },
     ],
   }),
   component: ProfilePage,
@@ -102,9 +105,7 @@ function ProfilePage() {
 
       <section
         className={`relative mt-4 overflow-hidden rounded-3xl p-5 ${
-          trial.active
-            ? "bg-primary text-white"
-            : "border border-border bg-surface/60"
+          trial.active ? "bg-primary text-primary-foreground" : "border border-border bg-surface/60"
         }`}
       >
         <div className="flex items-center gap-2.5">
@@ -112,9 +113,7 @@ function ProfilePage() {
             <Crown className={`h-5 w-5 ${trial.active ? "text-white" : "text-primary"}`} />
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.2em] opacity-90">
-              Premium Trial
-            </div>
+            <div className="text-[10px] uppercase tracking-[0.2em] opacity-90">Premium Trial</div>
             <div className="text-lg font-bold tracking-tight">
               {trial.active ? "Active" : "Expired"}
             </div>
@@ -133,9 +132,7 @@ function ProfilePage() {
         <Link
           to="/premium"
           className={`mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold transition active:scale-[0.98] ${
-            trial.active
-              ? "bg-black/25 text-white"
-              : "bg-primary text-primary-foreground"
+            trial.active ? "bg-black/20 text-foreground" : "bg-primary text-primary-foreground"
           }`}
         >
           <Sparkles className="h-4 w-4" />

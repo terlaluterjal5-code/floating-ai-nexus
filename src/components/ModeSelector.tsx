@@ -52,9 +52,7 @@ export function ModeSelector({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
                         <span className="text-[13px] font-medium text-foreground">{c.label}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {c.cost} cr
-                        </span>
+                        <span className="text-[10px] text-muted-foreground">{c.cost} cr</span>
                       </div>
                       <p className="text-[11px] leading-snug text-muted-foreground">{c.desc}</p>
                     </div>

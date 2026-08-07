@@ -20,7 +20,17 @@ import {
   type Conversation,
   type Message,
 } from "@/lib/conversations";
-import { ArrowUp, Paperclip, Plus, Square, X, FileText, Loader2, Trash2, Pencil } from "lucide-react";
+import {
+  ArrowUp,
+  Paperclip,
+  Plus,
+  Square,
+  X,
+  FileText,
+  Loader2,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const searchSchema = z.object({ q: z.string().optional() });
@@ -224,7 +234,7 @@ function ChatPage() {
         abortRef.current = null;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [conversation, user, messages],
   );
 

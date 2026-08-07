@@ -2,14 +2,27 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { isPremium, setPremium, usePremium } from "@/lib/storage";
 import { useSubscription, FEATURE_KEYS } from "@/lib/subscription";
-import { Crown, Check, Sparkles, Zap, Rocket, Telescope, FileText, Infinity as InfIcon } from "lucide-react";
+import {
+  Crown,
+  Check,
+  Sparkles,
+  Zap,
+  Rocket,
+  Telescope,
+  FileText,
+  Infinity as InfIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/premium")({
   head: () => ({
     meta: [
       { title: "FloatingSpace Premium" },
-      { name: "description", content: "Unlock unlimited deep research, advanced image generation, priority AI, and more." },
+      {
+        name: "description",
+        content:
+          "Unlock unlimited deep research, advanced image generation, priority AI, and more.",
+      },
     ],
   }),
   component: PremiumPage,
@@ -23,10 +36,18 @@ const FEATURES = [
   { key: "larger_pdf_analysis", icon: FileText, text: "Larger PDF analysis capability" },
   { key: "priority_processing", icon: Rocket, text: "Priority AI processing" },
   { key: "exclusive_futuristic_ai_tools", icon: Sparkles, text: "Exclusive futuristic AI tools" },
-  { key: "professional_research_assistant", icon: Telescope, text: "Professional research assistant" },
+  {
+    key: "professional_research_assistant",
+    icon: Telescope,
+    text: "Professional research assistant",
+  },
   { key: "unlimited_chat_credits", icon: InfIcon, text: "Unlimited chat credits" },
   { key: "advanced_data_analysis", icon: Sparkles, text: "Advanced data analysis" },
-] as const satisfies ReadonlyArray<{ key: (typeof FEATURE_KEYS)[number]; icon: unknown; text: string }>;
+] as const satisfies ReadonlyArray<{
+  key: (typeof FEATURE_KEYS)[number];
+  icon: unknown;
+  text: string;
+}>;
 
 function PremiumPage() {
   const premium = usePremium();
@@ -78,11 +99,15 @@ function PremiumPage() {
           {FEATURES.map((f) => {
             const active = subscription ? subscription.features[f.key] : premium;
             return (
-            <li key={f.key} className="flex items-center gap-2.5 py-0.5">
-              <f.icon className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.8} />
-              <span className={`flex-1 text-[13px] ${active ? "" : "text-muted-foreground"}`}>{f.text}</span>
-              <Check className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground/40"}`} />
-            </li>
+              <li key={f.key} className="flex items-center gap-2.5 py-0.5">
+                <f.icon className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.8} />
+                <span className={`flex-1 text-[13px] ${active ? "" : "text-muted-foreground"}`}>
+                  {f.text}
+                </span>
+                <Check
+                  className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground/40"}`}
+                />
+              </li>
             );
           })}
         </ul>

@@ -19,8 +19,7 @@ export function AppShell({
   useAutoTopup();
   const { user } = useSession();
   const profile = useProfile(user);
-  const avatar =
-    profile?.avatar_url || (user?.user_metadata?.avatar_url as string | undefined);
+  const avatar = profile?.avatar_url || (user?.user_metadata?.avatar_url as string | undefined);
   return (
     <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-x-hidden">
       {!hideHeader && (
