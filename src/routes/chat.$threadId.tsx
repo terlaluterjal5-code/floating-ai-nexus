@@ -20,7 +20,17 @@ import {
   type Conversation,
   type Message,
 } from "@/lib/conversations";
-import { ArrowUp, Paperclip, Plus, Square, X, FileText, Loader2, Trash2, Pencil } from "lucide-react";
+import {
+  ArrowUp,
+  Paperclip,
+  Plus,
+  Square,
+  X,
+  FileText,
+  Loader2,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const searchSchema = z.object({ q: z.string().optional() });
@@ -224,7 +234,7 @@ function ChatPage() {
         abortRef.current = null;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [conversation, user, messages],
   );
 
@@ -321,20 +331,20 @@ function ChatPage() {
 
   return (
     <AppShell hideHeader>
-      <div className="sticky top-0 z-30 -mx-4 mb-3 px-4 pt-[calc(env(safe-area-inset-top)+10px)]">
-        <div className="glass flex items-center gap-2 rounded-2xl px-2.5 py-2">
+      <div className="sticky top-0 z-30 -mx-4 mb-4 border-b border-border/60 bg-background/85 px-3 pb-2.5 pt-[calc(env(safe-area-inset-top)+12px)] backdrop-blur-xl">
+        <div className="flex items-center gap-1">
           <Link
             to="/"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-foreground/80 transition active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200 active:bg-white/5"
             aria-label="Home"
           >
-            <BrandLogo size={26} />
+            <BrandLogo size={22} />
           </Link>
-          <div className="flex-1 truncate px-1">
-            <div className="truncate text-[13px] font-semibold leading-tight text-foreground/95">
+          <div className="min-w-0 flex-1 px-1">
+            <div className="truncate text-[13.5px] font-medium leading-tight text-foreground">
               {conversation?.title || "New chat"}
             </div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
+            <div className="truncate text-[10.5px] text-muted-foreground">
               {conversation ? MODES[conversation.mode].label : "…"}
             </div>
           </div>
@@ -342,23 +352,23 @@ function ChatPage() {
             <>
               <button
                 onClick={rename}
-                className="glass flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 active:bg-white/5"
                 aria-label="Rename"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-4 w-4" />
               </button>
               <button
                 onClick={remove}
-                className="glass flex h-8 w-8 items-center justify-center rounded-full text-red-400 transition active:scale-95"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 active:bg-white/5"
                 aria-label="Delete"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </>
           )}
           <button
             onClick={newChat}
-            className="glass flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 active:bg-white/5"
             aria-label="New chat"
           >
             <Plus className="h-4 w-4" />
@@ -369,7 +379,7 @@ function ChatPage() {
 
       <div
         ref={scrollRef}
-        className="flex flex-col gap-3 overflow-y-auto pb-2"
+        className="flex flex-col gap-5 overflow-y-auto pb-2"
         style={{ minHeight: "calc(100dvh - 260px)" }}
       >
         {loading && (
@@ -379,12 +389,12 @@ function ChatPage() {
           </div>
         )}
         {!loading && empty && (
-          <div className="mt-8 flex flex-col items-center gap-3 px-6 text-center">
-            <BrandLogo size={64} />
-            <h2 className="text-lg font-semibold text-gradient">
+          <div className="mt-10 flex flex-col items-center gap-3 px-6 text-center">
+            <BrandLogo size={52} />
+            <h2 className="text-[19px] font-medium tracking-tight text-foreground">
               How can I help you today?
             </h2>
-            <p className="text-[12px] text-muted-foreground">
+            <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted-foreground">
               {conversation ? MODES[conversation.mode].desc : ""}
             </p>
           </div>
@@ -393,11 +403,11 @@ function ChatPage() {
           <MessageBubble key={m.id} message={m} />
         ))}
         {streaming && (
-          <div className="animate-fade-in">
+          <div>
             {streamText ? (
-              <div className="pl-1 pr-2">
+              <div className="pr-1">
                 <ChatMarkdown text={streamText} />
-                <span className="ml-0.5 inline-block h-3 w-1.5 translate-y-0.5 animate-pulse bg-primary" />
+                <span className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 animate-pulse bg-primary" />
               </div>
             ) : (
               <ThinkingBubble mode={conversation?.mode ?? "standard"} />
@@ -432,9 +442,9 @@ function ChatPage() {
               ))}
             </div>
           )}
-          <div className="glass flex items-end gap-1.5 rounded-3xl p-1.5 shadow-2xl shadow-black/40">
-            <label className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition active:scale-90 hover:text-foreground">
-              <Paperclip className="h-4 w-4" />
+          <div className="flex items-end gap-1 rounded-[26px] border border-border bg-surface/95 p-1.5 backdrop-blur-xl">
+            <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 hover:text-foreground active:bg-white/5">
+              <Paperclip className="h-[18px] w-[18px]" />
               <input
                 type="file"
                 className="hidden"
@@ -458,27 +468,27 @@ function ChatPage() {
               }}
               rows={1}
               placeholder="Message FloatingSpace…"
-              className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-1 py-2 text-[14px] outline-none placeholder:text-muted-foreground"
+              className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-1 py-2.5 text-[14.5px] leading-relaxed outline-none placeholder:text-muted-foreground"
               style={{
-                height: Math.min(160, Math.max(36, input.split("\n").length * 22)),
+                height: Math.min(160, Math.max(40, input.split("\n").length * 24)),
               }}
             />
             {streaming ? (
               <button
                 onClick={() => abortRef.current?.abort()}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground active:scale-90"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-foreground transition duration-200 active:scale-95"
                 aria-label="Stop"
               >
-                <Square className="h-3.5 w-3.5 fill-current" />
+                <Square className="h-3 w-3 fill-current" />
               </button>
             ) : (
               <button
                 onClick={() => void send(input, attachments)}
                 disabled={!input.trim() && attachments.length === 0}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-brand-foreground shadow-lg shadow-primary/40 transition active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition duration-200 active:scale-95 disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground"
                 aria-label="Send"
               >
-                <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
+                <ArrowUp className="h-[18px] w-[18px]" strokeWidth={2.4} />
               </button>
             )}
           </div>
@@ -492,14 +502,14 @@ function MessageBubble({ message }: { message: Message }) {
   const time = formatTime(message.created_at);
   if (message.role === "user") {
     return (
-      <div className="flex flex-col items-end pl-6 animate-fade-in">
-        <div className="rounded-2xl bg-brand-gradient px-3.5 py-2 text-[14px] text-brand-foreground shadow-lg shadow-primary/20">
+      <div className="flex flex-col items-end pl-8 animate-msg-in">
+        <div className="rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-[14.5px] leading-relaxed text-primary-foreground">
           {message.attachments && message.attachments.length > 0 && (
             <div className="mb-1.5 flex flex-wrap gap-1">
               {message.attachments.map((a, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-1 rounded-full bg-black/25 px-2 py-0.5 text-[10px]"
+                  className="flex items-center gap-1 rounded-full bg-black/20 px-2 py-0.5 text-[10.5px]"
                 >
                   <FileText className="h-3 w-3" />
                   <span className="max-w-[140px] truncate">{a.name}</span>
@@ -509,26 +519,23 @@ function MessageBubble({ message }: { message: Message }) {
           )}
           {message.content && <div className="whitespace-pre-wrap">{message.content}</div>}
         </div>
-        <div className="mt-1 pr-1 text-[10px] text-muted-foreground">{time}</div>
+        <div className="mt-1.5 pr-1 text-[10px] text-muted-foreground">{time}</div>
       </div>
     );
   }
   return (
-    <div className="animate-fade-in pl-1 pr-2">
+    <div className="animate-msg-in pr-1">
       <ChatMarkdown text={message.content} />
-      <div className="mt-1 pl-1 text-[10px] text-muted-foreground">{time}</div>
+      <div className="mt-1.5 text-[10px] text-muted-foreground">{time}</div>
     </div>
   );
 }
 
 function ThinkingBubble({ mode }: { mode: ChatMode }) {
   return (
-    <div className="flex items-center gap-2 pl-1">
-      <div className="relative flex h-6 w-6 items-center justify-center">
-        <span className="absolute inset-0 rounded-full bg-brand-gradient opacity-40 blur-md animate-float-orb" />
-        <Loader2 className="relative h-4 w-4 animate-spin text-primary" />
-      </div>
-      <span className="text-[12px] font-medium text-muted-foreground">
+    <div className="flex items-center gap-2">
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+      <span className="text-[12.5px] text-muted-foreground">
         {mode === "deep" ? "Researching…" : "Thinking…"}
       </span>
     </div>

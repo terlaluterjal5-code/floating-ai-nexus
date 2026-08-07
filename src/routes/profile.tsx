@@ -10,7 +10,10 @@ export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
       { title: "Your Profile — FloatingSpace" },
-      { name: "description", content: "Manage your FloatingSpace account, view your Premium trial status and sign out." },
+      {
+        name: "description",
+        content: "Manage your FloatingSpace account, view your Premium trial status and sign out.",
+      },
     ],
   }),
   component: ProfilePage,
@@ -31,7 +34,7 @@ function ProfilePage() {
   if (!loading && !user) {
     return (
       <AppShell>
-        <section className="mt-6 glass rounded-3xl p-6 text-center">
+        <section className="mt-6 border border-border bg-surface/60 rounded-3xl p-6 text-center">
           <UserIcon className="mx-auto h-10 w-10 text-muted-foreground" />
           <h1 className="mt-3 text-lg font-semibold">You're not signed in</h1>
           <p className="mt-1 text-[12.5px] text-muted-foreground">
@@ -39,7 +42,7 @@ function ProfilePage() {
           </p>
           <Link
             to="/auth"
-            className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-brand-gradient py-3 text-[14px] font-semibold text-brand-foreground shadow-lg shadow-primary/30"
+            className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-primary py-3 text-[14px] font-semibold text-primary-foreground"
           >
             Sign in
           </Link>
@@ -71,9 +74,9 @@ function ProfilePage() {
 
   return (
     <AppShell>
-      <section className="relative mt-2 overflow-hidden rounded-3xl glass p-5">
+      <section className="relative mt-2 overflow-hidden rounded-3xl border border-border bg-surface/60 p-5">
         <div
-          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-30 blur-3xl animate-float-orb"
+          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary opacity-10 blur-3xl"
           aria-hidden
         />
         <div className="relative flex items-center gap-3">
@@ -82,10 +85,10 @@ function ProfilePage() {
               <img
                 src={avatar}
                 alt={name}
-                className="h-16 w-16 rounded-2xl border border-white/15 object-cover"
+                className="h-16 w-16 rounded-2xl border border-border object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-2xl font-semibold text-brand-foreground">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-2xl font-semibold text-primary-foreground">
                 {name[0]?.toUpperCase()}
               </div>
             )}
@@ -102,19 +105,15 @@ function ProfilePage() {
 
       <section
         className={`relative mt-4 overflow-hidden rounded-3xl p-5 ${
-          trial.active
-            ? "bg-brand-gradient text-white shadow-2xl shadow-primary/40"
-            : "glass"
+          trial.active ? "bg-primary text-primary-foreground" : "border border-border bg-surface/60"
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <div className={`rounded-xl p-2 ${trial.active ? "bg-black/25" : "bg-brand-gradient/20"}`}>
+          <div className={`rounded-xl p-2 ${trial.active ? "bg-black/25" : "bg-primary/12"}`}>
             <Crown className={`h-5 w-5 ${trial.active ? "text-white" : "text-primary"}`} />
           </div>
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-90">
-              Premium Trial
-            </div>
+            <div className="text-[10px] uppercase tracking-[0.2em] opacity-90">Premium Trial</div>
             <div className="text-lg font-bold tracking-tight">
               {trial.active ? "Active" : "Expired"}
             </div>
@@ -133,9 +132,7 @@ function ProfilePage() {
         <Link
           to="/premium"
           className={`mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold transition active:scale-[0.98] ${
-            trial.active
-              ? "bg-black/25 text-white"
-              : "bg-brand-gradient text-brand-foreground shadow-lg shadow-primary/30"
+            trial.active ? "bg-black/20 text-foreground" : "bg-primary text-primary-foreground"
           }`}
         >
           <Sparkles className="h-4 w-4" />
@@ -145,7 +142,7 @@ function ProfilePage() {
 
       <button
         onClick={handleSignOut}
-        className="glass mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-[13px] font-medium text-foreground/90 transition active:scale-[0.98]"
+        className="border border-border bg-surface/60 mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-[13px] font-medium text-foreground/90 transition active:scale-[0.98]"
       >
         <LogOut className="h-4 w-4" />
         Sign out

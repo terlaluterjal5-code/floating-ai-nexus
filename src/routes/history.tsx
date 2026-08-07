@@ -33,8 +33,14 @@ function HistoryPage() {
     return () => clearTimeout(t);
   }, [q]);
 
-  const { items, loading: listLoading, loadingMore, hasMore, loadMore, refresh } =
-    useConversations(user?.id, debouncedQ);
+  const {
+    items,
+    loading: listLoading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+  } = useConversations(user?.id, debouncedQ);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -93,16 +99,16 @@ function HistoryPage() {
   return (
     <AppShell>
       <div className="mt-2 flex items-center justify-between px-1">
-        <h1 className="text-lg font-semibold tracking-tight text-gradient">Chat History</h1>
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">Chat History</h1>
         <button
           onClick={create}
-          className="flex items-center gap-1 rounded-full bg-brand-gradient px-3 py-1.5 text-[11px] font-semibold text-brand-foreground shadow-lg shadow-primary/30 active:scale-95"
+          className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground active:scale-95"
         >
           <Plus className="h-3.5 w-3.5" /> New chat
         </button>
       </div>
 
-      <div className="glass mt-3 flex items-center gap-2 rounded-full px-3 py-2">
+      <div className="border border-border bg-surface/60 mt-3 flex items-center gap-2 rounded-full px-3 py-2">
         <Search className="h-3.5 w-3.5 text-muted-foreground" />
         <input
           value={q}
@@ -114,13 +120,13 @@ function HistoryPage() {
 
       <div className="mt-3 flex flex-col gap-1.5">
         {listLoading && items.length === 0 && (
-          <div className="glass mt-4 flex items-center justify-center gap-2 rounded-2xl p-6 text-muted-foreground">
+          <div className="border border-border bg-surface/60 mt-4 flex items-center justify-center gap-2 rounded-2xl p-6 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-[12px]">Loading…</span>
           </div>
         )}
         {!listLoading && items.length === 0 && (
-          <div className="glass mt-4 rounded-2xl p-6 text-center">
+          <div className="border border-border bg-surface/60 mt-4 rounded-2xl p-6 text-center">
             <MessagesSquare className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
             <p className="text-[12px] text-muted-foreground">
               {debouncedQ ? "No matches." : "No conversations yet."}
@@ -128,7 +134,10 @@ function HistoryPage() {
           </div>
         )}
         {items.map((t) => (
-          <div key={t.id} className="glass flex items-center gap-1 rounded-2xl p-2">
+          <div
+            key={t.id}
+            className="border border-border bg-surface/60 flex items-center gap-1 rounded-2xl p-2"
+          >
             <Link
               to="/chat/$threadId"
               params={{ threadId: t.id }}
@@ -140,7 +149,7 @@ function HistoryPage() {
                   {t.title || "Untitled"}
                 </div>
               </div>
-              <div className="mt-0.5 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground">
+              <div className="mt-0.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 <span>{MODES[t.mode].label}</span>
                 <span>·</span>
                 <span>{new Date(t.updated_at).toLocaleString()}</span>
@@ -177,9 +186,7 @@ function HistoryPage() {
           </div>
         )}
         {!hasMore && items.length > 0 && (
-          <div className="py-2 text-center text-[10px] text-muted-foreground">
-            End of history
-          </div>
+          <div className="py-2 text-center text-[10px] text-muted-foreground">End of history</div>
         )}
       </div>
     </AppShell>

@@ -10,7 +10,10 @@ export const Route = createFileRoute("/pdf")({
   head: () => ({
     meta: [
       { title: "PDF Analyzer — FloatingSpace" },
-      { name: "description", content: "Upload a PDF and let FloatingSpace analyze, summarize, and explain it." },
+      {
+        name: "description",
+        content: "Upload a PDF and let FloatingSpace analyze, summarize, and explain it.",
+      },
     ],
   }),
   component: PdfPage,
@@ -26,16 +29,37 @@ function fileToDataUrl(f: File): Promise<string> {
 }
 
 const TASKS = [
-  { label: "Summarize", prompt: "Give me a comprehensive summary of this document with the key points, structure, and main takeaways." },
-  { label: "Extract key info", prompt: "Extract all important information from this PDF: dates, names, numbers, decisions, and action items." },
-  { label: "Create a report", prompt: "Create a detailed structured report based on this document with sections, findings, and recommendations." },
-  { label: "Q&A", prompt: "Read this document carefully. I'll ask questions about it. Confirm you've read it, then wait for my questions." },
+  {
+    label: "Summarize",
+    prompt:
+      "Give me a comprehensive summary of this document with the key points, structure, and main takeaways.",
+  },
+  {
+    label: "Extract key info",
+    prompt:
+      "Extract all important information from this PDF: dates, names, numbers, decisions, and action items.",
+  },
+  {
+    label: "Create a report",
+    prompt:
+      "Create a detailed structured report based on this document with sections, findings, and recommendations.",
+  },
+  {
+    label: "Q&A",
+    prompt:
+      "Read this document carefully. I'll ask questions about it. Confirm you've read it, then wait for my questions.",
+  },
 ];
 
 function PdfPage() {
   const nav = useNavigate();
   const { user } = useSession();
-  const [file, setFile] = useState<{ name: string; mime: string; dataUrl: string; size: number } | null>(null);
+  const [file, setFile] = useState<{
+    name: string;
+    mime: string;
+    dataUrl: string;
+    size: number;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function onPick(f: File | null) {
@@ -76,11 +100,11 @@ function PdfPage() {
   return (
     <AppShell>
       <div className="mb-3 mt-2 flex items-center gap-2 px-1">
-        <div className="rounded-xl bg-brand-gradient/20 p-1.5">
+        <div className="rounded-xl bg-primary/12 p-1.5">
           <FileText className="h-4 w-4 text-primary" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-gradient">PDF Analyzer</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-foreground">PDF Analyzer</h1>
           <p className="text-[11px] text-muted-foreground">
             Upload a PDF and let FloatingSpace read, summarize, and analyze it.
           </p>
@@ -88,8 +112,8 @@ function PdfPage() {
       </div>
 
       {!file ? (
-        <label className="glass mt-2 flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-white/15 p-6 text-center transition active:scale-[0.98]">
-          <div className="rounded-2xl bg-brand-gradient/20 p-3">
+        <label className="border border-border bg-surface/60 mt-2 flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-border p-6 text-center transition active:scale-[0.98]">
+          <div className="rounded-2xl bg-primary/12 p-3">
             <Upload className="h-6 w-6 text-primary" />
           </div>
           <div>
@@ -107,13 +131,13 @@ function PdfPage() {
         </label>
       ) : (
         <>
-          <div className="glass flex items-center gap-3 rounded-2xl p-3">
-            <div className="rounded-xl bg-brand-gradient/25 p-2.5">
+          <div className="border border-border bg-surface/60 flex items-center gap-3 rounded-2xl p-3">
+            <div className="rounded-xl bg-primary/12 p-2.5">
               <FileText className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13px] font-semibold">{file.name}</div>
-              <div className="text-[10px] font-mono text-muted-foreground">
+              <div className="text-[10px] text-muted-foreground">
                 {(file.size / 1024).toFixed(1)} KB · Ready
               </div>
             </div>
@@ -133,9 +157,9 @@ function PdfPage() {
               <button
                 key={t.label}
                 onClick={() => launchWithPrompt(t.prompt)}
-                className="glass flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition active:scale-[0.97]"
+                className="border border-border bg-surface/60 flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition active:scale-[0.99]"
               >
-                <div className="rounded-lg bg-brand-gradient/20 p-1.5">
+                <div className="rounded-lg bg-primary/12 p-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <span className="text-[13px] font-semibold">{t.label}</span>

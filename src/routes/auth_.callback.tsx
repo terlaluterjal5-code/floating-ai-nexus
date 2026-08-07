@@ -13,10 +13,7 @@ export const Route = createFileRoute("/auth_/callback")({
   // Session lives in localStorage; this page is browser-only by nature.
   ssr: false,
   head: () => ({
-    meta: [
-      { title: "Signing in — FloatingSpace" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Signing in — FloatingSpace" }, { name: "robots", content: "noindex" }],
   }),
   component: AuthCallbackPage,
 });
@@ -99,7 +96,9 @@ function AuthCallbackPage() {
       }
 
       if (!code && !access_token && !session) {
-        console.warn("[auth.callback] Callback arrived without an authorization code or session tokens");
+        console.warn(
+          "[auth.callback] Callback arrived without an authorization code or session tokens",
+        );
       }
 
       // Confirm the session can be read back from persistent storage before
@@ -135,10 +134,10 @@ function AuthCallbackPage() {
 
   return (
     <AppShell hideHeader>
-      <section className="mt-10 flex flex-col items-center justify-center rounded-3xl glass p-8 text-center">
+      <section className="mt-10 flex flex-col items-center justify-center rounded-3xl border border-border bg-surface/60 p-8 text-center">
         <BrandLogo size={48} />
         <h1 className="mt-4 text-lg font-semibold tracking-tight">
-          <span className="text-gradient">FloatingSpace</span>
+          <span className="text-foreground">FloatingSpace</span>
         </h1>
         <p className="mt-2 text-[12.5px] text-muted-foreground">{message}</p>
       </section>

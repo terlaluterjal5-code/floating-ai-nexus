@@ -76,11 +76,11 @@ function ImagePage() {
     <AppShell>
       <section className="mt-2">
         <div className="mb-3 flex items-center gap-2 px-1">
-          <div className="rounded-xl bg-brand-gradient/20 p-1.5">
+          <div className="rounded-xl bg-primary/12 p-1.5">
             <Sparkles className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-gradient">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
               Image Generator
             </h1>
             <p className="text-[11px] text-muted-foreground">
@@ -89,7 +89,7 @@ function ImagePage() {
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-2">
+        <div className="border border-border bg-surface/60 rounded-2xl p-2">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -98,13 +98,13 @@ function ImagePage() {
             className="w-full resize-none bg-transparent px-2 py-2 text-[14px] outline-none placeholder:text-muted-foreground"
           />
           <div className="flex items-center justify-between px-1 pt-1">
-            <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Gemini 3 Pro Image
             </span>
             <button
               onClick={generate}
               disabled={loading || !prompt.trim()}
-              className="flex items-center gap-1.5 rounded-full bg-brand-gradient px-4 py-1.5 text-[12px] font-semibold text-brand-foreground shadow-lg shadow-primary/30 transition active:scale-95 disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-[12px] font-semibold text-primary-foreground transition active:scale-95 disabled:opacity-40"
             >
               {loading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -121,7 +121,7 @@ function ImagePage() {
             <button
               key={s}
               onClick={() => setPrompt(s)}
-              className="glass rounded-full px-2.5 py-1 text-[11px] text-muted-foreground transition active:scale-95 hover:text-foreground"
+              className="border border-border bg-surface/60 rounded-full px-2.5 py-1 text-[11px] text-muted-foreground transition active:scale-95 hover:text-foreground"
             >
               {s.split(",")[0]}
             </button>
@@ -130,12 +130,12 @@ function ImagePage() {
       </section>
 
       {loading && (
-        <div className="mt-4 aspect-square w-full overflow-hidden rounded-2xl glass">
+        <div className="mt-4 aspect-square w-full overflow-hidden rounded-2xl border border-border bg-surface/60">
           <div className="relative h-full w-full">
             <div className="absolute inset-0 animate-shimmer" />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                 Rendering…
               </span>
             </div>
@@ -148,7 +148,7 @@ function ImagePage() {
           Recent
         </h2>
         {images.length === 0 && !loading && (
-          <div className="glass rounded-2xl p-6 text-center">
+          <div className="border border-border bg-surface/60 rounded-2xl p-6 text-center">
             <p className="text-[12px] text-muted-foreground">
               Your generated images will appear here.
             </p>
@@ -156,8 +156,15 @@ function ImagePage() {
         )}
         <div className="grid grid-cols-2 gap-2">
           {images.map((img) => (
-            <div key={img.id} className="glass group relative overflow-hidden rounded-2xl">
-              <img src={img.dataUrl} alt={img.prompt} className="aspect-square w-full object-cover" />
+            <div
+              key={img.id}
+              className="border border-border bg-surface/60 group relative overflow-hidden rounded-2xl"
+            >
+              <img
+                src={img.dataUrl}
+                alt={img.prompt}
+                className="aspect-square w-full object-cover"
+              />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
                 <p className="line-clamp-2 text-[10px] text-white/90">{img.prompt}</p>
               </div>
@@ -165,14 +172,14 @@ function ImagePage() {
                 <a
                   href={img.dataUrl}
                   download={`floatingspace-${img.id}.png`}
-                  className="glass flex h-7 w-7 items-center justify-center rounded-full transition active:scale-90"
+                  className="border border-border bg-surface/60 flex h-7 w-7 items-center justify-center rounded-full transition active:scale-90"
                   aria-label="Download"
                 >
                   <Download className="h-3.5 w-3.5" />
                 </a>
                 <button
                   onClick={() => deleteImage(img.id)}
-                  className="glass flex h-7 w-7 items-center justify-center rounded-full text-destructive transition active:scale-90"
+                  className="border border-border bg-surface/60 flex h-7 w-7 items-center justify-center rounded-full text-destructive transition active:scale-90"
                   aria-label="Delete"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
