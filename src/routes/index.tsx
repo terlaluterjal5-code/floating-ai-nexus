@@ -85,41 +85,31 @@ function Index() {
   return (
     <AppShell>
       {/* Hero */}
-      <section className="relative mt-2 overflow-hidden rounded-3xl glass p-5">
-        <div
-          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-10 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative flex items-start gap-3">
-          <BrandLogo size={44} />
-          <div className="flex-1">
-            <h1 className="text-[22px] font-semibold leading-tight tracking-tight">
-              <span className="text-foreground">FloatingSpace</span>
-              <span className="text-foreground/90"> AI</span>
+      <section className="mt-1">
+        <div className="flex items-center gap-3">
+          <BrandLogo size={38} />
+          <div className="min-w-0">
+            <h1 className="truncate text-[21px] font-semibold leading-tight tracking-[-0.02em] text-foreground">
+              FloatingSpace
             </h1>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">
-              Next-generation research assistant · GPT-class reasoning · Deep research
+            <p className="truncate text-[12px] text-muted-foreground">
+              Reasoning · Research · Analysis
             </p>
           </div>
         </div>
         <button
           onClick={() => startChat("", "standard")}
-          className="mt-4 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition active:scale-[0.99]"
+          className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-border bg-surface/70 px-4 py-3.5 text-left transition duration-200 active:bg-surface"
         >
-          <div>
-            <div className="text-[13px] font-medium text-foreground/90">Ask FloatingSpace anything…</div>
-            <div className="mt-0.5 text-[11px] text-muted-foreground">
-              Reasoning · Research · Analysis
-            </div>
-          </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-brand-foreground shadow-lg shadow-primary/30">
+          <span className="text-[13.5px] text-muted-foreground">Ask FloatingSpace anything…</span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <ArrowRight className="h-4 w-4" />
-          </div>
+          </span>
         </button>
       </section>
 
       {/* Quick actions */}
-      <section className="mt-4 grid grid-cols-4 gap-2">
+      <section className="mt-3 grid grid-cols-4 gap-2">
         {[
           { to: "/chat", label: "Chat", icon: Bot },
           { to: "/image", label: "Image", icon: Sparkles },
@@ -129,12 +119,10 @@ function Index() {
           <Link
             key={to}
             to={to}
-            className="glass flex flex-col items-center gap-1.5 rounded-2xl px-2 py-3 transition active:scale-95"
+            className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface/60 px-2 py-3.5 transition duration-200 active:bg-surface"
           >
-            <div className="rounded-xl bg-brand-gradient/20 p-2">
-              <Icon className="h-4 w-4 text-primary" />
-            </div>
-            <span className="text-[11px] font-medium">{label}</span>
+            <Icon className="h-[18px] w-[18px] text-primary" strokeWidth={1.8} />
+            <span className="text-[11px] font-medium text-foreground/90">{label}</span>
           </Link>
         ))}
       </section>
@@ -142,24 +130,24 @@ function Index() {
       {/* Deep research callout */}
       <button
         onClick={() => startChat("", "deep")}
-        className="relative mt-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-brand-gradient p-4 text-left shadow-xl shadow-primary/30 active:scale-[0.99]"
+        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-primary/10 p-4 text-left transition duration-200 active:bg-primary/15"
       >
-        <div className="rounded-xl bg-black/25 p-2">
-          <Telescope className="h-5 w-5 text-white" />
+        <Telescope className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-medium text-foreground">Deep Research</div>
+          <div className="truncate text-[11.5px] text-muted-foreground">
+            Structured, comprehensive reports
+          </div>
         </div>
-        <div className="flex-1 text-white">
-          <div className="text-[13px] font-semibold">Deep Research Mode</div>
-          <div className="text-[11px] opacity-90">Structured, comprehensive reports</div>
-        </div>
-        <ArrowRight className="h-4 w-4 text-white/90" />
+        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
 
       {/* Topics */}
       {TOPICS.map(({ section, icon: SecIcon, items }) => (
-        <section key={section} className="mt-6">
-          <div className="mb-2 flex items-center gap-2 px-1">
-            <SecIcon className="h-4 w-4 text-primary" />
-            <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <section key={section} className="mt-7">
+          <div className="mb-2.5 flex items-center gap-2">
+            <SecIcon className="h-[15px] w-[15px] text-muted-foreground" strokeWidth={1.8} />
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               {section}
             </h2>
           </div>
@@ -168,11 +156,9 @@ function Index() {
               <button
                 key={it.label}
                 onClick={() => startChat(it.prompt)}
-                className="glass group flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition active:scale-[0.97]"
+                className="flex min-h-[72px] flex-col items-start gap-2 rounded-2xl border border-border bg-surface/50 p-3 text-left transition duration-200 active:bg-surface"
               >
-                <div className="rounded-lg bg-brand-gradient/20 p-1.5">
-                  <it.icon className="h-3.5 w-3.5 text-primary" />
-                </div>
+                <it.icon className="h-4 w-4 text-primary" strokeWidth={1.8} />
                 <div className="text-[12.5px] font-medium leading-snug text-foreground/90">
                   {it.label}
                 </div>
@@ -182,8 +168,8 @@ function Index() {
         </section>
       ))}
 
-      <footer className="mt-8 pb-2 text-center text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-        FloatingSpace · Built by ZNTech
+      <footer className="mt-9 pb-2 text-center text-[10.5px] tracking-wide text-muted-foreground">
+        FloatingSpace · by ZNTech
       </footer>
     </AppShell>
   );
