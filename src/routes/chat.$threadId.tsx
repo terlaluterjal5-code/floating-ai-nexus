@@ -393,11 +393,11 @@ function ChatPage() {
           <MessageBubble key={m.id} message={m} />
         ))}
         {streaming && (
-          <div className="animate-msg-in">
+          <div>
             {streamText ? (
-              <div className="pl-1 pr-2">
+              <div className="pr-1">
                 <ChatMarkdown text={streamText} />
-                <span className="ml-0.5 inline-block h-3 w-1.5 translate-y-0.5 animate-pulse bg-primary" />
+                <span className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 animate-pulse bg-primary" />
               </div>
             ) : (
               <ThinkingBubble mode={conversation?.mode ?? "standard"} />
