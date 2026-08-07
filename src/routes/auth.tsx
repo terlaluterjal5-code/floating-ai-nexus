@@ -48,33 +48,27 @@ function AuthPage() {
 
   return (
     <AppShell hideHeader>
-      <section className="relative mt-6 overflow-hidden rounded-3xl glass p-6">
-        <div
-          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-gradient opacity-10 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative flex flex-col items-center text-center">
-          <BrandLogo size={56} />
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight">
-            <span className="text-foreground">Welcome to FloatingSpace</span>
+      <section className="relative mt-10 rounded-3xl border border-border bg-surface/60 p-6">
+        <div className="flex flex-col items-center text-center">
+          <BrandLogo size={48} />
+          <h1 className="mt-4 text-[22px] font-semibold tracking-tight text-foreground">
+            Welcome to FloatingSpace
           </h1>
-          <p className="mt-1 text-[12.5px] text-muted-foreground">
+          <p className="mt-1.5 text-[12.5px] text-muted-foreground">
             Sign in and unlock a{" "}
             <span className="font-semibold text-foreground">2-day Premium trial</span>
           </p>
         </div>
 
-        <ul className="relative mt-5 space-y-2">
+        <ul className="mt-6 space-y-3">
           {[
             { icon: Crown, text: "2-day Premium trial — unlimited credits" },
             { icon: Telescope, text: "Deep Research access" },
             { icon: Sparkles, text: "HD image generation & PDF analysis" },
           ].map((f) => (
             <li key={f.text} className="flex items-center gap-2.5">
-              <div className="rounded-lg bg-brand-gradient/20 p-1.5">
-                <f.icon className="h-3.5 w-3.5 text-primary" />
-              </div>
-              <span className="text-[13px]">{f.text}</span>
+              <f.icon className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.8} />
+              <span className="text-[13px] text-foreground/90">{f.text}</span>
             </li>
           ))}
         </ul>
@@ -82,13 +76,13 @@ function AuthPage() {
         <button
           onClick={google}
           disabled={loading || busy}
-          className="relative mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-[14px] font-semibold text-black shadow-2xl shadow-primary/30 transition active:scale-[0.98] disabled:opacity-60"
+          className="mt-7 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-[14px] font-semibold text-black transition duration-200 active:scale-[0.99] disabled:opacity-60"
         >
           <GoogleIcon />
           {loading ? "Checking session…" : busy ? "Connecting…" : "Continue with Google"}
         </button>
 
-        <p className="relative mt-4 text-center text-[11px] text-muted-foreground">
+        <p className="mt-4 text-center text-[11px] text-muted-foreground">
           By continuing you accept our terms & privacy notice.
         </p>
       </section>
