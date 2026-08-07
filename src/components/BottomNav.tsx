@@ -12,9 +12,9 @@ const items = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto max-w-md px-3 pb-3">
-        <div className="glass flex items-center justify-between rounded-2xl px-2 py-2 shadow-2xl shadow-black/40">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <div className="mx-auto max-w-md px-2">
+        <div className="flex items-stretch justify-between py-1.5">
           {items.map(({ to, label, icon: Icon }) => {
             const active =
               to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
@@ -22,18 +22,13 @@ export function BottomNav() {
               <Link
                 key={to}
                 to={to}
-                className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 transition-all duration-200 active:scale-95 ${
-                  active ? "text-foreground" : "text-muted-foreground"
+                aria-current={active ? "page" : undefined}
+                className={`flex min-h-11 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 transition-colors duration-200 ${
+                  active ? "text-primary" : "text-muted-foreground active:text-foreground"
                 }`}
               >
-                {active && (
-                  <span className="absolute inset-0 rounded-xl bg-brand-gradient opacity-15" />
-                )}
-                <Icon
-                  className={`relative h-5 w-5 transition-transform ${active ? "scale-110" : ""}`}
-                  strokeWidth={active ? 2.4 : 1.8}
-                />
-                <span className="relative text-[9.5px] font-medium tracking-wide">{label}</span>
+                <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.2 : 1.7} />
+                <span className="text-[10px] font-medium tracking-wide">{label}</span>
               </Link>
             );
           })}
