@@ -1,16 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MODES, type ChatMode } from "@/lib/models";
+import { MODES, CHAT_MODEL, type ChatMode } from "@/lib/models";
 import {
-  streamGemini,
+  streamChatCompletion,
   estimateCostUsd,
   type ClientMessage,
-  type GeminiStreamError,
-} from "@/lib/ai/gemini.server";
+  type AiStreamError,
+} from "@/lib/ai/openrouter.server";
 import { loadUserMemories, loadConversationSummary, runMemoryWorker } from "@/lib/ai/memory.server";
 import { recordUsage } from "@/lib/ai/usage.server";
 import { checkRateLimit } from "@/lib/ai/rate-limit.server";
-import { resolveEntitlements } from "@/lib/ai/entitlements.server";
-import type { FeatureKey } from "@/lib/ai/features";
 import {
   authenticate,
   claimRequest,
@@ -19,36 +17,18 @@ import {
   newRequestId,
 } from "@/lib/ai/http.server";
 
-/** Request types the client may declare. Authorization is still server-decided. */
-type RequestType =
-  | "chat"
-  | "deep_research"
-  | "data_analysis"
-  | "pdf_analysis"
-  | "research_assistant"
-  | "futuristic_tools";
-
 type Body = {
   messages: ClientMessage[];
   mode: ChatMode;
   conversationId?: string;
-  requestType?: RequestType;
+  requestType?: string;
 };
 
 const ENDPOINT = "/api/ai-chat";
-/** Models that are actually available for the configured GEMINI_API_KEY. */
-const MODEL_FLASH = "gemini-flash-latest";
-const MODEL_PRO = "gemini-pro-latest";
-/** Free-tier attachment budget (bytes). Larger docs need larger_pdf_analysis. */
-const FREE_ATTACHMENT_BYTES = 4 * 1024 * 1024;
-const PREMIUM_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-
-const REQUEST_TYPE_FEATURE: Partial<Record<RequestType, FeatureKey>> = {
-  deep_research: "unlimited_deep_research",
-  data_analysis: "advanced_data_analysis",
-  research_assistant: "professional_research_assistant",
-  futuristic_tools: "exclusive_futuristic_ai_tools",
-};
+/** Attachment budget (bytes). */
+const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+const CHAT_PER_MINUTE = 20;
+const CHAT_PER_DAY = 500;
 
 function attachmentBytes(messages: ClientMessage[]): number {
   let total = 0;
@@ -60,7 +40,7 @@ function attachmentBytes(messages: ClientMessage[]): number {
   return total;
 }
 
-function upstreamErrorText(err: GeminiStreamError): string {
+function upstreamErrorText(err: AiStreamError): string {
   switch (err.code) {
     case "invalid_api_key":
       return "\n\n_The AI service is not correctly configured. Please try again later._";
@@ -89,7 +69,7 @@ export const Route = createFileRoute("/api/ai-chat")({
         // 1. Authenticate (Supabase JWT)
         const auth = await authenticate(request, reqId);
         if (auth instanceof Response) return auth;
-        const { supabase, userId, geminiApiKey } = auth;
+        const { supabase, userId, aiApiKey } = auth;
 
         // 2. Parse + validate input
         let body: Body;
@@ -99,7 +79,7 @@ export const Route = createFileRoute("/api/ai-chat")({
           return errorResponse(400, "INVALID_BODY", "Malformed request.", reqId);
         }
         const { messages, mode, conversationId } = body;
-        const requestType: RequestType = body.requestType ?? "chat";
+        const requestType = body.requestType ?? "chat";
         if (!Array.isArray(messages) || messages.length === 0 || !mode || !MODES[mode]) {
           return errorResponse(400, "INVALID_BODY", "Missing messages or mode.", reqId);
         }
@@ -119,105 +99,53 @@ export const Route = createFileRoute("/api/ai-chat")({
             "DUPLICATE_REQUEST",
             "This request is already being processed.",
             reqId,
-            {
-              retryable: false,
-            },
+            { retryable: false },
           );
         }
 
-        // 4. Subscription + feature authorization (server-side only)
-        const ent = await resolveEntitlements(supabase, userId, { reqId });
-        const f = ent.features;
-
-        const deepRequested = mode === "deep" || requestType === "deep_research";
-        if (deepRequested && !f.unlimited_deep_research) {
-          console.warn(
-            `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=unlimited_deep_research`,
-          );
-          return errorResponse(
-            403,
-            "FEATURE_NOT_AVAILABLE",
-            "Deep Research is not available on your current plan.",
-            reqId,
-            { feature: "unlimited_deep_research" },
-          );
-        }
-        const gated = REQUEST_TYPE_FEATURE[requestType];
-        if (gated && !f[gated]) {
-          console.warn(
-            `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=${gated}`,
-          );
-          return errorResponse(
-            403,
-            "FEATURE_NOT_AVAILABLE",
-            "This feature is not available on your current plan.",
-            reqId,
-            {
-              feature: gated,
-            },
-          );
-        }
-
+        // 4. Attachment size guard
         const bytes = attachmentBytes(messages);
-        const cap = f.larger_pdf_analysis ? PREMIUM_ATTACHMENT_BYTES : FREE_ATTACHMENT_BYTES;
-        if (bytes > cap) {
-          console.warn(
-            `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=larger_pdf_analysis bytes=${bytes}`,
-          );
+        if (bytes > MAX_ATTACHMENT_BYTES) {
           return errorResponse(
             413,
-            f.larger_pdf_analysis ? "ATTACHMENT_TOO_LARGE" : "FEATURE_NOT_AVAILABLE",
-            f.larger_pdf_analysis
-              ? "This document is too large to analyse."
-              : "Large document analysis is not available on your current plan.",
+            "ATTACHMENT_TOO_LARGE",
+            "This document is too large to analyse.",
             reqId,
-            { feature: "larger_pdf_analysis" },
           );
         }
 
-        // 5. Chat usage limit (skipped when unlimited_chat_credits)
-        if (!f.unlimited_chat_credits) {
-          const rl = await checkRateLimit(supabase, userId, ENDPOINT, {
-            perMinute: ent.chatMinuteLimit,
-            perDay: ent.chatDailyLimit,
+        // 5. Abuse protection (fair-use rate limit)
+        const rl = await checkRateLimit(supabase, userId, ENDPOINT, {
+          perMinute: CHAT_PER_MINUTE,
+          perDay: CHAT_PER_DAY,
+        });
+        if (!rl.ok) {
+          await recordUsage(supabase, {
+            userId,
+            conversationId: conversationId ?? null,
+            endpoint: ENDPOINT,
+            model: "",
+            latencyMs: Date.now() - started,
+            status: "rate_limited",
+            error: `scope=${rl.scope}`,
           });
-          if (!rl.ok) {
-            await recordUsage(supabase, {
-              userId,
-              conversationId: conversationId ?? null,
-              endpoint: ENDPOINT,
-              model: "",
-              latencyMs: Date.now() - started,
-              status: "rate_limited",
-              error: `plan=${ent.plan} scope=${rl.scope}`,
-            });
-            console.warn(
-              `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} status=chat_limit scope=${rl.scope}`,
-            );
-            return errorResponse(
-              429,
-              "CHAT_LIMIT_REACHED",
-              `You've reached your ${rl.scope === "minute" ? "per-minute" : "daily"} chat limit on the ${ent.planName} plan. Upgrade for unlimited chat.`,
-              reqId,
-              {
-                feature: "unlimited_chat_credits",
-                retryable: true,
-                retryAfterSec: rl.retryAfterSec,
-              },
-            );
-          }
+          console.warn(`[ai-chat] rid=${reqId} user=${userId} status=chat_limit scope=${rl.scope}`);
+          return errorResponse(
+            429,
+            "CHAT_LIMIT_REACHED",
+            `Too many requests right now. Please retry in a moment.`,
+            reqId,
+            { retryable: true, retryAfterSec: rl.retryAfterSec },
+          );
         }
 
-        // 6. Model configuration — only models available to this API key
+        // 6. Model configuration
         const cfg = MODES[mode];
-        const model = deepRequested && f.higher_ai_intelligence ? MODEL_PRO : MODEL_FLASH;
-        const priority = f.priority_processing;
-        const fast = f.faster_response_speed;
+        const model = CHAT_MODEL;
 
-        // 7. Context assembly (leaner when faster_response_speed is enabled)
-        const memoryLimit = fast ? 8 : 12;
+        // 7. Context assembly
         const [memories, summary] = await Promise.all([
-          loadUserMemories(supabase, userId, memoryLimit),
+          loadUserMemories(supabase, userId, 12),
           conversationId
             ? loadConversationSummary(supabase, conversationId)
             : Promise.resolve<string | null>(null),
@@ -231,7 +159,7 @@ export const Route = createFileRoute("/api/ai-chat")({
         const system = systemBlocks.join("\n\n");
 
         console.log(
-          `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} type=${requestType} mode=${mode} model=${model} priority=${priority} fast=${fast} msgs=${messages.length} conv=${conversationId ?? "-"} status=start`,
+          `[ai-chat] rid=${reqId} user=${userId} type=${requestType} mode=${mode} model=${model} msgs=${messages.length} conv=${conversationId ?? "-"} status=start`,
         );
 
         const encoder = new TextEncoder();
@@ -243,15 +171,13 @@ export const Route = createFileRoute("/api/ai-chat")({
             let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0 };
             let status: "ok" | "error" | "aborted" = "ok";
             let errMsg: string | null = null;
-            let usedModel = model;
-            let retryCount = 0;
 
-            const run = async (m: string) => {
-              const result = await streamGemini({
-                model: m,
+            try {
+              const result = await streamChatCompletion({
+                model,
                 system,
                 messages,
-                apiKey: geminiApiKey,
+                apiKey: aiApiKey,
                 clientSignal: request.signal,
                 writeDelta: (t) => {
                   fullText += t;
@@ -264,40 +190,14 @@ export const Route = createFileRoute("/api/ai-chat")({
                 totalTokens: result.totalTokens,
                 latencyMs: result.latencyMs,
               };
-            };
-
-            try {
-              await run(model);
             } catch (e) {
-              const ge = e as GeminiStreamError;
+              const ge = e as AiStreamError;
               console.error(
-                `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} model=${model} status=upstream_error code=${ge.code} http=${ge.status} retry_count=${retryCount}`,
+                `[ai-chat] rid=${reqId} user=${userId} model=${model} status=upstream_error code=${ge.code} http=${ge.status}`,
               );
-              const transient =
-                ge.code === "rate_limited" ||
-                ge.code === "quota_exceeded" ||
-                ge.code === "upstream";
-              if (
-                transient &&
-                model !== MODEL_FLASH &&
-                !request.signal.aborted &&
-                fullText.length === 0
-              ) {
-                retryCount++;
-                try {
-                  await run(MODEL_FLASH);
-                  usedModel = MODEL_FLASH;
-                } catch (e2) {
-                  const ge2 = e2 as GeminiStreamError;
-                  status = ge2.code === "aborted" ? "aborted" : "error";
-                  errMsg = ge2.code;
-                  write({ choices: [{ delta: { content: upstreamErrorText(ge2) } }] });
-                }
-              } else {
-                status = ge.code === "aborted" ? "aborted" : "error";
-                errMsg = ge.code;
-                write({ choices: [{ delta: { content: upstreamErrorText(ge) } }] });
-              }
+              status = ge.code === "aborted" ? "aborted" : "error";
+              errMsg = ge.code;
+              write({ choices: [{ delta: { content: upstreamErrorText(ge) } }] });
             }
 
             const latencyMs = usage.latencyMs || Date.now() - started;
@@ -323,7 +223,7 @@ export const Route = createFileRoute("/api/ai-chat")({
               } else if (data) {
                 messageId = data.id;
                 write({
-                  meta: { messageId: data.id, createdAt: data.created_at, model: usedModel, usage },
+                  meta: { messageId: data.id, createdAt: data.created_at, model, usage },
                 });
                 await supabase
                   .from("conversations")
@@ -336,15 +236,15 @@ export const Route = createFileRoute("/api/ai-chat")({
             controller.close();
 
             // 9. Usage logging
-            const cost = estimateCostUsd(usedModel, usage.promptTokens, usage.completionTokens);
+            const cost = estimateCostUsd(model, usage.promptTokens, usage.completionTokens);
             console.log(
-              `[ai-chat] rid=${reqId} user=${userId} plan=${ent.plan} feature=${gated ?? requestType} model=${usedModel} status=${status} tokens=${usage.totalTokens} latency=${latencyMs} retry_count=${retryCount} priority=${priority}`,
+              `[ai-chat] rid=${reqId} user=${userId} model=${model} status=${status} tokens=${usage.totalTokens} latency=${latencyMs}`,
             );
             await recordUsage(supabase, {
               userId,
               conversationId: conversationId ?? null,
               endpoint: ENDPOINT,
-              model: usedModel,
+              model,
               promptTokens: usage.promptTokens,
               completionTokens: usage.completionTokens,
               totalTokens: usage.totalTokens,
@@ -355,7 +255,7 @@ export const Route = createFileRoute("/api/ai-chat")({
             });
 
             if (status === "ok" && conversationId && messageId && fullText.length > 40) {
-              runMemoryWorker(supabase, geminiApiKey, userId, conversationId).catch((e) =>
+              runMemoryWorker(supabase, aiApiKey, userId, conversationId).catch((e) =>
                 console.error(`[ai-chat] rid=${reqId} memory-worker error=${(e as Error).message}`),
               );
             }
@@ -369,7 +269,6 @@ export const Route = createFileRoute("/api/ai-chat")({
             Connection: "keep-alive",
             "X-Accel-Buffering": "no",
             "X-Request-Id": reqId,
-            "X-Priority": priority ? "high" : "normal",
           },
         });
       },
