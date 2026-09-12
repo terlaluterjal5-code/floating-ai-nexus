@@ -15,7 +15,7 @@ import {
   Sparkles,
   FileText,
   Telescope,
-  Crown,
+  History,
 } from "lucide-react";
 import { createConversation } from "@/lib/conversations";
 import { useSession } from "@/lib/auth";
