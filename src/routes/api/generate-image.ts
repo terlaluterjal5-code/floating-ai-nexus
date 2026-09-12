@@ -107,6 +107,7 @@ export const Route = createFileRoute("/api/generate-image")({
               body: JSON.stringify({
                 model: IMAGE_MODEL,
                 modalities: ["image", "text"],
+                max_tokens: 3000,
                 messages: [{ role: "user", content: fullPrompt }],
               }),
             });
