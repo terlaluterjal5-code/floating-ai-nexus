@@ -9,10 +9,12 @@ export function AppShell({
   children,
   headerRight,
   hideHeader = false,
+  hideNav = false,
 }: {
   children: ReactNode;
   headerRight?: ReactNode;
   hideHeader?: boolean;
+  hideNav?: boolean;
 }) {
   const { user } = useSession();
   const profile = useProfile(user);
@@ -49,8 +51,8 @@ export function AppShell({
           </div>
         </header>
       )}
-      <main className="flex-1 px-4 pb-28 pt-3">{children}</main>
-      <BottomNav />
+      <main className={`flex-1 px-4 pt-3 ${hideNav ? "pb-4" : "pb-28"}`}>{children}</main>
+      {!hideNav && <BottomNav />}
     </div>
   );
 }
