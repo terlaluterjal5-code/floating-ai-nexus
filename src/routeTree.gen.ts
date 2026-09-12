@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as PdfRouteImport } from './routes/pdf'
 import { Route as ImageRouteImport } from './routes/image'
 import { Route as HistoryRouteImport } from './routes/history'
@@ -20,7 +19,6 @@ import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as ApiUsageWorkerRouteImport } from './routes/api/usage-worker'
-import { Route as ApiSubscriptionCheckRouteImport } from './routes/api/subscription-check'
 import { Route as ApiMemoryWorkerRouteImport } from './routes/api/memory-worker'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
@@ -28,11 +26,6 @@ import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PremiumRoute = PremiumRouteImport.update({
-  id: '/premium',
-  path: '/premium',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PdfRoute = PdfRouteImport.update({
@@ -80,11 +73,6 @@ const ApiUsageWorkerRoute = ApiUsageWorkerRouteImport.update({
   path: '/api/usage-worker',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSubscriptionCheckRoute = ApiSubscriptionCheckRouteImport.update({
-  id: '/api/subscription-check',
-  path: '/api/subscription-check',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiMemoryWorkerRoute = ApiMemoryWorkerRouteImport.update({
   id: '/api/memory-worker',
   path: '/api/memory-worker',
@@ -107,12 +95,10 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
-  '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
-  '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -124,12 +110,10 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
-  '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
-  '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -142,12 +126,10 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/image': typeof ImageRoute
   '/pdf': typeof PdfRoute
-  '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/memory-worker': typeof ApiMemoryWorkerRoute
-  '/api/subscription-check': typeof ApiSubscriptionCheckRoute
   '/api/usage-worker': typeof ApiUsageWorkerRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -161,12 +143,10 @@ export interface FileRouteTypes {
     | '/history'
     | '/image'
     | '/pdf'
-    | '/premium'
     | '/profile'
     | '/api/ai-chat'
     | '/api/generate-image'
     | '/api/memory-worker'
-    | '/api/subscription-check'
     | '/api/usage-worker'
     | '/auth/callback'
     | '/chat/$threadId'
@@ -178,12 +158,10 @@ export interface FileRouteTypes {
     | '/history'
     | '/image'
     | '/pdf'
-    | '/premium'
     | '/profile'
     | '/api/ai-chat'
     | '/api/generate-image'
     | '/api/memory-worker'
-    | '/api/subscription-check'
     | '/api/usage-worker'
     | '/auth/callback'
     | '/chat/$threadId'
@@ -195,12 +173,10 @@ export interface FileRouteTypes {
     | '/history'
     | '/image'
     | '/pdf'
-    | '/premium'
     | '/profile'
     | '/api/ai-chat'
     | '/api/generate-image'
     | '/api/memory-worker'
-    | '/api/subscription-check'
     | '/api/usage-worker'
     | '/auth_/callback'
     | '/chat/$threadId'
@@ -213,12 +189,10 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   ImageRoute: typeof ImageRoute
   PdfRoute: typeof PdfRoute
-  PremiumRoute: typeof PremiumRoute
   ProfileRoute: typeof ProfileRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ApiMemoryWorkerRoute: typeof ApiMemoryWorkerRoute
-  ApiSubscriptionCheckRoute: typeof ApiSubscriptionCheckRoute
   ApiUsageWorkerRoute: typeof ApiUsageWorkerRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
@@ -232,13 +206,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/premium': {
-      id: '/premium'
-      path: '/premium'
-      fullPath: '/premium'
-      preLoaderRoute: typeof PremiumRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pdf': {
@@ -304,13 +271,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsageWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/subscription-check': {
-      id: '/api/subscription-check'
-      path: '/api/subscription-check'
-      fullPath: '/api/subscription-check'
-      preLoaderRoute: typeof ApiSubscriptionCheckRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/memory-worker': {
       id: '/api/memory-worker'
       path: '/api/memory-worker'
@@ -341,12 +301,10 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   ImageRoute: ImageRoute,
   PdfRoute: PdfRoute,
-  PremiumRoute: PremiumRoute,
   ProfileRoute: ProfileRoute,
   ApiAiChatRoute: ApiAiChatRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ApiMemoryWorkerRoute: ApiMemoryWorkerRoute,
-  ApiSubscriptionCheckRoute: ApiSubscriptionCheckRoute,
   ApiUsageWorkerRoute: ApiUsageWorkerRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,

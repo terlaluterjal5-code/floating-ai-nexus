@@ -6,7 +6,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { ChatMarkdown } from "@/components/ChatMarkdown";
 import { ModeSelector } from "@/components/ModeSelector";
 import { useSession } from "@/lib/auth";
-import { isPremium, spendCredits, useHydrated } from "@/lib/storage";
+import { useHydrated } from "@/lib/storage";
 import { MODES, type ChatMode } from "@/lib/models";
 import { streamChat, type ChatRequestType, type SendMessage } from "@/lib/streamChat";
 import {
@@ -126,11 +126,6 @@ function ChatPage() {
       const trimmed = text.trim();
       if (!trimmed && atts.length === 0) return;
       const mode = conversation.mode;
-      const cost = MODES[mode].cost;
-      if (!isPremium() && !spendCredits(cost)) {
-        toast.error("Not enough credits. Try Basic mode, wait for top-up, or upgrade to Premium.");
-        return;
-      }
 
       const attSummaries = atts.map((a) => ({
         name: a.name,
