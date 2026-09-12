@@ -33,6 +33,6 @@ export const MODES: Record<
   },
 };
 
-export const IMAGE_MODEL = "google/gemini-3-pro-image";
+export const IMAGE_MODEL = "google/gemini-2.5-flash-image";
 export const IMAGE_PROMPT_PREFIX =
   "Ultra super realistic, indistinguishable-from-reality photograph. Shot on Phase One IQ4 150MP medium-format camera with an 80mm f/1.4 prime lens, natural cinematic lighting, physically accurate global illumination, true-to-life color science, razor-sharp focus with realistic depth of field, natural film grain, lifelike skin texture with visible pores and subsurface scattering when applicable, hyper-detailed micro-textures, 8K resolution, RAW photo, no CGI look, no illustration, no painterly style. Subject:";

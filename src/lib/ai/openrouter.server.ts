@@ -286,7 +286,7 @@ export function estimateCostUsd(
 ): number {
   const rates: Record<string, { input: number; output: number }> = {
     "google/gemini-3.7-flash": { input: 0.3, output: 2.5 },
-    "google/gemini-3-pro-image": { input: 2, output: 12 },
+    "google/gemini-2.5-flash-image": { input: 0.3, output: 2.5 },
   };
   const r = rates[model] ?? { input: 0.5, output: 1.5 };
   return (promptTokens * r.input + completionTokens * r.output) / 1_000_000;
