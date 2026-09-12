@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { BrandLogo } from "@/components/BrandLogo";
 import { useSession } from "@/lib/auth";
 import { startGoogleSignIn, rememberRedirect } from "@/lib/oauth";
-import { Sparkles, Crown, Telescope } from "lucide-react";
+import { Sparkles, Telescope } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/auth")({
       {
         name: "description",
         content:
-          "Sign in to FloatingSpace to unlock a 2-day Premium trial, cloud sync, and your personal AI history.",
+          "Sign in to FloatingSpace for cloud sync, saved conversations, and your personal AI history.",
       },
     ],
   }),
@@ -42,7 +42,7 @@ function AuthPage() {
         return;
       }
       if (res.redirected) return;
-      toast.success("Signed in — enjoy your 2-day Premium trial!");
+      toast.success("Signed in!");
       navigate({ to: "/chat", replace: true });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign-in failed");
@@ -59,14 +59,13 @@ function AuthPage() {
             Welcome to FloatingSpace
           </h1>
           <p className="mt-1.5 text-[12.5px] text-muted-foreground">
-            Sign in and unlock a{" "}
-            <span className="font-semibold text-foreground">2-day Premium trial</span>
+            Sign in to sync your chats across devices
           </p>
         </div>
 
         <ul className="mt-6 space-y-3">
           {[
-            { icon: Crown, text: "2-day Premium trial — unlimited credits" },
+            { icon: Sparkles, text: "Cloud-synced chat history" },
             { icon: Telescope, text: "Deep Research access" },
             { icon: Sparkles, text: "HD image generation & PDF analysis" },
           ].map((f) => (

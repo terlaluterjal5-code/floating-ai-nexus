@@ -1,10 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useSession, useProfile, signOut } from "@/lib/auth";
-import { useTrialEndsAt } from "@/lib/storage";
-import { Crown, LogOut, Sparkles, Clock, Mail, User as UserIcon } from "lucide-react";
+import { LogOut, Mail, User as UserIcon } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -12,7 +10,7 @@ export const Route = createFileRoute("/profile")({
       { title: "Your Profile — FloatingSpace" },
       {
         name: "description",
-        content: "Manage your FloatingSpace account, view your Premium trial status and sign out.",
+        content: "Manage your FloatingSpace account and sign out.",
       },
     ],
   }),
@@ -23,13 +21,6 @@ function ProfilePage() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
   const profile = useProfile(user);
-  const trialEnds = useTrialEndsAt();
-
-  const trial = useMemo(() => {
-    if (!trialEnds) return { active: false, msLeft: 0 };
-    const msLeft = trialEnds - Date.now();
-    return { active: msLeft > 0, msLeft };
-  }, [trialEnds]);
 
   if (!loading && !user) {
     return (
@@ -38,7 +29,7 @@ function ProfilePage() {
           <UserIcon className="mx-auto h-10 w-10 text-muted-foreground" />
           <h1 className="mt-3 text-lg font-semibold">You're not signed in</h1>
           <p className="mt-1 text-[12.5px] text-muted-foreground">
-            Sign in to unlock your 2-day Premium trial.
+            Sign in to sync your conversations across devices.
           </p>
           <Link
             to="/auth"
@@ -103,43 +94,6 @@ function ProfilePage() {
         </div>
       </section>
 
-      <section
-        className={`relative mt-4 overflow-hidden rounded-3xl p-5 ${
-          trial.active ? "bg-primary text-primary-foreground" : "border border-border bg-surface/60"
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className={`rounded-xl p-2 ${trial.active ? "bg-black/25" : "bg-primary/12"}`}>
-            <Crown className={`h-5 w-5 ${trial.active ? "text-white" : "text-primary"}`} />
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.2em] opacity-90">Premium Trial</div>
-            <div className="text-lg font-bold tracking-tight">
-              {trial.active ? "Active" : "Expired"}
-            </div>
-          </div>
-        </div>
-        {trial.active ? (
-          <div className="mt-3 flex items-center gap-2 text-[12.5px]">
-            <Clock className="h-3.5 w-3.5" />
-            <span>{formatRemaining(trial.msLeft)} left of your 2-day Premium trial</span>
-          </div>
-        ) : (
-          <p className="mt-2 text-[12.5px] text-muted-foreground">
-            Your trial has ended. Upgrade to keep Premium benefits.
-          </p>
-        )}
-        <Link
-          to="/premium"
-          className={`mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-2xl py-3 text-[13px] font-semibold transition active:scale-[0.98] ${
-            trial.active ? "bg-black/20 text-foreground" : "bg-primary text-primary-foreground"
-          }`}
-        >
-          <Sparkles className="h-4 w-4" />
-          {trial.active ? "See Premium plan" : "Upgrade to Premium"}
-        </Link>
-      </section>
-
       <button
         onClick={handleSignOut}
         className="border border-border bg-surface/60 mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-[13px] font-medium text-foreground/90 transition active:scale-[0.98]"
@@ -149,14 +103,4 @@ function ProfilePage() {
       </button>
     </AppShell>
   );
-}
-
-function formatRemaining(ms: number) {
-  const totalMin = Math.floor(ms / 60000);
-  const d = Math.floor(totalMin / (60 * 24));
-  const h = Math.floor((totalMin % (60 * 24)) / 60);
-  const m = totalMin % 60;
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
 }

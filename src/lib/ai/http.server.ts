@@ -1,7 +1,6 @@
 // Server-only HTTP/auth helpers shared by AI routes.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import type { FeatureKey } from "@/lib/ai/features";
 
 export function newRequestId() {
   return Math.random().toString(36).slice(2, 10);
@@ -24,7 +23,7 @@ export function errorResponse(
   code: string,
   message: string,
   requestId: string,
-  extra: { feature?: FeatureKey | string; retryable?: boolean; retryAfterSec?: number } = {},
+  extra: { feature?: string; retryable?: boolean; retryAfterSec?: number } = {},
 ) {
   const headers: Record<string, string> = { "X-Request-Id": requestId };
   if (extra.retryAfterSec) headers["Retry-After"] = String(extra.retryAfterSec);
@@ -66,7 +65,7 @@ export function createUserClient(
 export type AuthContext = {
   supabase: SupabaseClient<Database>;
   userId: string;
-  geminiApiKey: string;
+  aiApiKey: string;
 };
 
 function hostnameOf(value: string): string {
@@ -99,10 +98,10 @@ export async function authenticate(
   const serverKey = process.env.SUPABASE_PUBLISHABLE_KEY;
   const browserUrl = process.env.VITE_SUPABASE_URL;
   const browserKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
   if ((!serverUrl || !serverKey) && (!browserUrl || !browserKey))
     return errorResponse(500, "SERVER_MISCONFIG", "Backend is not configured.", requestId);
-  if (!GEMINI_API_KEY)
+  if (!OPENROUTER_API_KEY)
     return errorResponse(500, "SERVER_MISCONFIG", "AI service is not configured.", requestId);
 
   const authHeader =
@@ -187,7 +186,7 @@ export async function authenticate(
       requestId,
     );
   }
-  return { supabase, userId: authenticatedUserId, geminiApiKey: GEMINI_API_KEY };
+  return { supabase, userId: authenticatedUserId, aiApiKey: OPENROUTER_API_KEY };
 }
 
 /** In-memory request dedup: rejects identical requests fired within `windowMs`. */

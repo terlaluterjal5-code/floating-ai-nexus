@@ -33,18 +33,10 @@ export type GeneratedImage = {
 
 const THREADS_KEY = "fs.threads.v1";
 const IMAGES_KEY = "fs.images.v1";
-const CREDITS_KEY = "fs.credits.v1";
-const PREMIUM_KEY = "fs.premium.v1";
-const LAST_TOPUP_KEY = "fs.lastTopup.v1";
-const TRIAL_ENDS_KEY = "fs.trialEndsAt.v1";
 
-export const MAX_CREDITS = 1000;
-const START_CREDITS = 250;
-const TOPUP_PER_MIN = 2; // +2 credits per minute of use
 
 const EMPTY_THREADS: ChatThread[] = [];
 const EMPTY_IMAGES: GeneratedImage[] = [];
-const DEFAULT_CREDITS = START_CREDITS;
 
 // ---------- generic ls store ----------
 const listeners = new Set<() => void>();
@@ -160,97 +152,6 @@ export function useImages(): GeneratedImage[] {
   return v;
 }
 
-// ---------- credits ----------
-export function getCredits(): number {
-  const v = read<number | null>(CREDITS_KEY, null);
-  return v == null ? START_CREDITS : v;
-}
-function ensureCreditsInit() {
-  if (typeof window === "undefined") return;
-  if (window.localStorage.getItem(CREDITS_KEY) == null) {
-    write(CREDITS_KEY, START_CREDITS);
-  }
-}
-export function spendCredits(n: number): boolean {
-  const cur = getCredits();
-  if (cur < n) return false;
-  write(CREDITS_KEY, Math.max(0, cur - n));
-  return true;
-}
-export function addCredits(n: number) {
-  write(CREDITS_KEY, Math.min(MAX_CREDITS, getCredits() + n));
-}
-export function isPremium(): boolean {
-  if (read<boolean>(PREMIUM_KEY, false)) return true;
-  return isTrialActive();
-}
-export function setPremium(v: boolean) {
-  write(PREMIUM_KEY, v);
-  if (v) write(CREDITS_KEY, MAX_CREDITS);
-}
-
-// ---------- 2-day premium trial (synced from profiles.trial_ends_at) ----------
-export function getTrialEndsAt(): number | null {
-  return read<number | null>(TRIAL_ENDS_KEY, null);
-}
-export function setTrialEndsAt(ts: number | null) {
-  if (ts == null) {
-    if (typeof window !== "undefined") window.localStorage.removeItem(TRIAL_ENDS_KEY);
-    cache.delete(TRIAL_ENDS_KEY);
-    emit();
-  } else {
-    write(TRIAL_ENDS_KEY, ts);
-  }
-}
-export function isTrialActive(): boolean {
-  const t = getTrialEndsAt();
-  return t != null && t > Date.now();
-}
-export function useTrialEndsAt(): number | null {
-  const [v, setV] = useState<number | null>(null);
-  useEffect(() => {
-    setV(getTrialEndsAt());
-    return subscribe(() => setV(getTrialEndsAt()));
-  }, []);
-  return v;
-}
-export function useCredits(): number {
-  const [v, setV] = useState<number>(DEFAULT_CREDITS);
-  useEffect(() => {
-    setV(getCredits());
-    return subscribe(() => setV(getCredits()));
-  }, []);
-  return v;
-}
-export function usePremium(): boolean {
-  const [v, setV] = useState<boolean>(false);
-  useEffect(() => {
-    setV(isPremium());
-    return subscribe(() => setV(isPremium()));
-  }, []);
-  return v;
-}
-
-// gradual top-up: +TOPUP_PER_MIN credits every minute the app is open
-export function useAutoTopup() {
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    ensureCreditsInit();
-    const tick = () => {
-      if (isPremium()) return;
-      const last = read<number>(LAST_TOPUP_KEY, Date.now());
-      const now = Date.now();
-      const minutes = Math.floor((now - last) / 60000);
-      if (minutes > 0) {
-        addCredits(minutes * TOPUP_PER_MIN);
-        write(LAST_TOPUP_KEY, now);
-      }
-    };
-    tick();
-    const id = window.setInterval(tick, 30000);
-    return () => window.clearInterval(id);
-  }, []);
-}
 
 // ---------- helpers ----------
 export function cryptoRandom() {

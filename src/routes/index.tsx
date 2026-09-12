@@ -15,7 +15,7 @@ import {
   Sparkles,
   FileText,
   Telescope,
-  Crown,
+  History,
 } from "lucide-react";
 import { createConversation } from "@/lib/conversations";
 import { useSession } from "@/lib/auth";
@@ -166,7 +166,7 @@ function Index() {
           { to: "/chat", label: "Chat", icon: Bot },
           { to: "/image", label: "Image", icon: Sparkles },
           { to: "/pdf", label: "PDF", icon: FileText },
-          { to: "/premium", label: "Premium", icon: Crown },
+          { to: "/history", label: "History", icon: History },
         ].map(({ to, label, icon: Icon }) => (
           <Link
             key={to}

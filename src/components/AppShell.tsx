@@ -2,9 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { BrandMark } from "./BrandLogo";
-import { CreditsBattery } from "./CreditsBattery";
 import { History, User as UserIcon } from "lucide-react";
-import { useAutoTopup } from "@/lib/storage";
 import { useSession, useProfile } from "@/lib/auth";
 
 export function AppShell({
@@ -16,7 +14,6 @@ export function AppShell({
   headerRight?: ReactNode;
   hideHeader?: boolean;
 }) {
-  useAutoTopup();
   const { user } = useSession();
   const profile = useProfile(user);
   const avatar = profile?.avatar_url || (user?.user_metadata?.avatar_url as string | undefined);
@@ -29,7 +26,6 @@ export function AppShell({
               <BrandMark />
             </Link>
             <div className="flex shrink-0 items-center gap-1">
-              <CreditsBattery compact />
               <Link
                 to="/history"
                 aria-label="Chat history"

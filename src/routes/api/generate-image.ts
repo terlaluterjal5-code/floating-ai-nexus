@@ -2,8 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { IMAGE_MODEL, IMAGE_PROMPT_PREFIX } from "@/lib/models";
 import { recordUsage } from "@/lib/ai/usage.server";
 import { checkRateLimit } from "@/lib/ai/rate-limit.server";
-import { estimateCostUsd } from "@/lib/ai/gemini.server";
-import { resolveEntitlements } from "@/lib/ai/entitlements.server";
+import {
+  estimateCostUsd,
+  orHeaders,
+  OPENROUTER_BASE_URL,
+} from "@/lib/ai/openrouter.server";
 import {
   authenticate,
   claimRequest,
@@ -14,9 +17,29 @@ import {
 } from "@/lib/ai/http.server";
 
 const ENDPOINT = "/api/generate-image";
-/** Standard prompt used when advanced_image_generation is not granted. */
-const STANDARD_PREFIX =
-  "High quality, realistic photograph with natural lighting and accurate colors. Subject:";
+
+type ORImageResponse = {
+  choices?: {
+    message?: {
+      content?: string | { type?: string; text?: string }[];
+      images?: { image_url?: { url?: string } }[];
+    };
+  }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
+};
+
+function extractDataUrl(data: ORImageResponse): string | null {
+  const msg = data.choices?.[0]?.message;
+  const fromImages = msg?.images?.[0]?.image_url?.url;
+  if (fromImages) return fromImages;
+  if (typeof msg?.content === "string" && msg.content.startsWith("data:image/")) return msg.content;
+  if (Array.isArray(msg?.content)) {
+    for (const part of msg.content) {
+      if (part?.text?.startsWith("data:image/")) return part.text;
+    }
+  }
+  return null;
+}
 
 export const Route = createFileRoute("/api/generate-image")({
   server: {
@@ -29,12 +52,9 @@ export const Route = createFileRoute("/api/generate-image")({
 
         const auth = await authenticate(request, reqId);
         if (auth instanceof Response) return auth;
-        const { supabase, userId, geminiApiKey } = auth;
+        const { supabase, userId, aiApiKey } = auth;
 
-        const { prompt, quality } = (await request.json().catch(() => ({}))) as {
-          prompt?: string;
-          quality?: "standard" | "premium";
-        };
+        const { prompt } = (await request.json().catch(() => ({}))) as { prompt?: string };
         if (!prompt || typeof prompt !== "string" || !prompt.trim())
           return errorResponse(400, "INVALID_BODY", "A prompt is required.", reqId);
 
@@ -44,51 +64,29 @@ export const Route = createFileRoute("/api/generate-image")({
             "DUPLICATE_REQUEST",
             "This image is already being generated.",
             reqId,
-            {
-              retryable: false,
-            },
+            { retryable: false },
           );
 
-        const ent = await resolveEntitlements(supabase, userId, { reqId });
-        const advanced = ent.features.advanced_image_generation;
-        // Never trust the client: premium quality requires the feature flag.
-        if (quality === "premium" && !advanced) {
-          console.warn(
-            `[generate-image] rid=${reqId} user=${userId} plan=${ent.plan} denied feature=advanced_image_generation`,
-          );
+        const rl = await checkRateLimit(supabase, userId, ENDPOINT, { perMinute: 5, perDay: 60 });
+        if (!rl.ok) {
+          await recordUsage(supabase, {
+            userId,
+            endpoint: ENDPOINT,
+            model: IMAGE_MODEL,
+            latencyMs: Date.now() - started,
+            status: "rate_limited",
+            error: `scope=${rl.scope}`,
+          });
           return errorResponse(
-            403,
-            "FEATURE_NOT_AVAILABLE",
-            "Advanced image generation is not available on your current plan.",
+            429,
+            "IMAGE_LIMIT_REACHED",
+            `You've reached the ${rl.scope === "minute" ? "per-minute" : "daily"} image limit. Please try again later.`,
             reqId,
-            { feature: "advanced_image_generation" },
+            { retryable: true, retryAfterSec: rl.retryAfterSec },
           );
         }
 
-        if (!ent.features.unlimited_chat_credits) {
-          const rl = await checkRateLimit(supabase, userId, ENDPOINT, { perMinute: 3, perDay: 20 });
-          if (!rl.ok) {
-            await recordUsage(supabase, {
-              userId,
-              endpoint: ENDPOINT,
-              model: IMAGE_MODEL,
-              latencyMs: Date.now() - started,
-              status: "rate_limited",
-              error: `plan=${ent.plan} scope=${rl.scope}`,
-            });
-            return errorResponse(
-              429,
-              "IMAGE_LIMIT_REACHED",
-              `You've reached your ${rl.scope === "minute" ? "per-minute" : "daily"} image limit on the ${ent.planName} plan.`,
-              reqId,
-              { retryable: true, retryAfterSec: rl.retryAfterSec },
-            );
-          }
-        }
-
-        const fullPrompt = `${advanced ? IMAGE_PROMPT_PREFIX : STANDARD_PREFIX} ${prompt}`;
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(IMAGE_MODEL)}:generateContent?key=${encodeURIComponent(geminiApiKey)}`;
-
+        const fullPrompt = `${IMAGE_PROMPT_PREFIX} ${prompt}`;
         let lastStatus = 0;
         let lastCode = "UPSTREAM_ERROR";
         let dataUrl: string | null = null;
@@ -98,26 +96,26 @@ export const Route = createFileRoute("/api/generate-image")({
 
         for (let attempt = 0; attempt < 3; attempt++) {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 60_000);
+          const timer = setTimeout(() => controller.abort(), 90_000);
           const onAbort = () => controller.abort();
           request.signal.addEventListener("abort", onAbort);
           try {
-            const resp = await fetch(url, {
+            const resp = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: orHeaders(aiApiKey),
               signal: controller.signal,
               body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-                generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+                model: IMAGE_MODEL,
+                modalities: ["image", "text"],
+                messages: [{ role: "user", content: fullPrompt }],
               }),
             });
             lastStatus = resp.status;
             if (!resp.ok) {
               const detail = await resp.text().catch(() => "");
               console.error(
-                `[generate-image] rid=${reqId} user=${userId} plan=${ent.plan} model=${IMAGE_MODEL} status=${resp.status} retry_count=${retryCount} detail=${detail.slice(0, 300)}`,
+                `[generate-image] rid=${reqId} user=${userId} model=${IMAGE_MODEL} status=${resp.status} retry_count=${retryCount} detail=${detail.slice(0, 300)}`,
               );
-              // Never retry permanent errors (400/401/403/404).
               if (resp.status === 429 || resp.status >= 500) {
                 lastCode = resp.status === 429 ? "UPSTREAM_RATE_LIMITED" : "UPSTREAM_ERROR";
                 const retryAfter = Number(resp.headers.get("retry-after"));
@@ -135,22 +133,10 @@ export const Route = createFileRoute("/api/generate-image")({
               lastCode = "UPSTREAM_REJECTED";
               break;
             }
-            const data = (await resp.json()) as {
-              candidates?: {
-                content?: {
-                  parts?: { inlineData?: { mimeType: string; data: string }; text?: string }[];
-                };
-              }[];
-              usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
-            };
-            promptTokens = data.usageMetadata?.promptTokenCount ?? 0;
-            completionTokens = data.usageMetadata?.candidatesTokenCount ?? 0;
-            for (const p of data.candidates?.[0]?.content?.parts ?? []) {
-              if (p.inlineData?.data) {
-                dataUrl = `data:${p.inlineData.mimeType};base64,${p.inlineData.data}`;
-                break;
-              }
-            }
+            const data = (await resp.json()) as ORImageResponse;
+            promptTokens = data.usage?.prompt_tokens ?? 0;
+            completionTokens = data.usage?.completion_tokens ?? 0;
+            dataUrl = extractDataUrl(data);
             break;
           } catch (e) {
             if (request.signal.aborted) {
@@ -203,7 +189,7 @@ export const Route = createFileRoute("/api/generate-image")({
         }
 
         console.log(
-          `[generate-image] rid=${reqId} user=${userId} plan=${ent.plan} feature=advanced_image_generation=${advanced} model=${IMAGE_MODEL} status=ok latency=${latencyMs} retry_count=${retryCount}`,
+          `[generate-image] rid=${reqId} user=${userId} model=${IMAGE_MODEL} status=ok latency=${latencyMs} retry_count=${retryCount}`,
         );
         await recordUsage(supabase, {
           userId,
@@ -215,11 +201,7 @@ export const Route = createFileRoute("/api/generate-image")({
           costUsd: cost,
           status: "ok",
         });
-        return jsonResponse(200, {
-          dataUrl,
-          quality: advanced ? "premium" : "standard",
-          request_id: reqId,
-        });
+        return jsonResponse(200, { dataUrl, request_id: reqId });
       },
     },
   },

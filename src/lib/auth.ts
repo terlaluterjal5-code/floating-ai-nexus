@@ -1,7 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { setTrialEndsAt } from "@/lib/storage";
 
 export type Profile = {
   id: string;
@@ -106,7 +105,6 @@ export function useProfile(user: User | null) {
   useEffect(() => {
     if (!user) {
       setProfile(null);
-      setTrialEndsAt(null);
       return;
     }
     let mounted = true;
@@ -119,7 +117,6 @@ export function useProfile(user: User | null) {
       if (!mounted) return;
       if (data) {
         setProfile(data as Profile);
-        setTrialEndsAt(new Date(data.trial_ends_at).getTime());
       }
     })();
     return () => {
@@ -134,5 +131,4 @@ export async function signOut() {
   if (error) throw error;
   authRevision += 1;
   publishAuth(null, "unauthenticated");
-  setTrialEndsAt(null);
 }

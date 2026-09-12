@@ -1,15 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import {
-  addImage,
-  cryptoRandom,
-  deleteImage,
-  isPremium,
-  spendCredits,
-  useImages,
-} from "@/lib/storage";
-import { IMAGE_COST } from "@/lib/models";
+import { addImage, cryptoRandom, deleteImage, useImages } from "@/lib/storage";
 import { Loader2, Sparkles, Download, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,10 +33,6 @@ function ImagePage() {
   async function generate() {
     const p = prompt.trim();
     if (!p) return;
-    if (!isPremium() && !spendCredits(IMAGE_COST)) {
-      toast.error("Not enough credits for image generation.");
-      return;
-    }
     setLoading(true);
     try {
       const { authedFetch } = await import("@/lib/authedFetch");
@@ -84,7 +72,7 @@ function ImagePage() {
               Image Generator
             </h1>
             <p className="text-[11px] text-muted-foreground">
-              Ultra realistic HD · Cinematic lighting · {IMAGE_COST} credits per image
+              Ultra realistic HD · Cinematic lighting
             </p>
           </div>
         </div>
