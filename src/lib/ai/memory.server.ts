@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateGeminiText } from "./gemini.server";
+import { generateText } from "./openrouter.server";
+import { CHAT_MODEL } from "@/lib/models";
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input.trim().toLowerCase());
@@ -42,7 +43,7 @@ ${transcript}`;
 
   let parsed: { summary?: string; memories?: string[] } = {};
   try {
-    const { text } = await generateGeminiText({ model: "gemini-2.5-flash", prompt, apiKey, maxOutputTokens: 1024 });
+    const { text } = await generateText({ model: CHAT_MODEL, prompt, apiKey, maxOutputTokens: 1024 });
     const s = text.indexOf("{"); const e = text.lastIndexOf("}");
     if (s >= 0 && e > s) parsed = JSON.parse(text.slice(s, e + 1));
   } catch (e) {
